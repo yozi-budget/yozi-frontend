@@ -1,0 +1,11 @@
+export declare const PageWrapper: any;
+export declare const Table: any;
+export declare const TableHeader: any;
+export declare const TableRow: any;
+export declare const TableCell: any;
+export declare const Select: any;
+export declare const Input: any;
+export declare const MemoInput: any;
+export declare const AddRowButton: any;
+export declare const SubmitButton: any;
+export declare const AmountWrapper: any;

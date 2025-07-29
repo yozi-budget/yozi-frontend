@@ -1,0 +1,12 @@
+export declare const Container: any;
+export declare const MainLayout: any;
+export declare const ContentWrapper: any;
+export declare const TopButtonRow: any;
+export declare const BudgetBox: any;
+export declare const BudgetTitle: any;
+export declare const BudgetAmount: any;
+export declare const ProgressBarWrapper: any;
+export declare const ProgressBackground: any;
+export declare const ProgressBar: any;
+export declare const BudgetDetail: any;
+export declare const SubText: any;
