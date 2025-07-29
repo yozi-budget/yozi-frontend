@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]            // @/ → src/ 매핑
+    },
+    "target": "ES2022",
+    "module": "ESNext",
+    "lib": ["ES2022", "DOM"],
+    "jsx": "react-jsx",
+    "strict": true,
+    "moduleResolution": "bundler"
+  },
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.node.json" }
+  ],
+  "moduleResolution": "node",
+  "esModuleInterop": true,
+  "allowSyntheticDefaultImports": true
+}
