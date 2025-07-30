@@ -25,7 +25,7 @@ const mockData = [
     id: 1,
     type: '지출',
     date: '2025.06.29 (일)',
-    category: '식사',
+    category: '식료품/외식',
     method: '카드',
     place: '씨유',
     amount: '11,000',
@@ -41,26 +41,37 @@ const mockData = [
     amount: '770,000',
     memo: '대타 포함'
   },
-
   {
     id: 3,
     type: '수입',
     date: '2025.09.15 (화)',
-    category: '기타',
-    method: '현금',
-    place: '알바비',
-    amount: '770,000',
-    memo: '대타 포함'
+    category: '금융/기타',
+    method: '이체',
+    place: '부모님',
+    amount: '300,000',
+    memo: '용돈'
   },
-  // 필요한 만큼 데이터 추가
+  {
+    id: 4,
+    type: '지출',
+    date: '2025.07.01 (월)',
+    category: '교통/차량',
+    method: '카드',
+    place: '버스',
+    amount: '1,250',
+    memo: ''
+  },
+  {
+    id: 5,
+    type: '지출',
+    date: '2025.08.01 (금)',
+    category: '쇼핑/패션',
+    method: '카드',
+    place: '무신사',
+    amount: '52,000',
+    memo: '반팔티'
+  }
 ];
-
-const isFutureDate = (dateStr: string) => {
-  const today = new Date();
-  const [year, month, day] = dateStr.split(' ')[0].split('.').map(Number);
-  const itemDate = new Date(year, month - 1, day);
-  return itemDate > today;
-};
 
 const LedgerReadPage = () => {
   const [isEditModalOpen, setEditModalOpen] = useState(false);
@@ -68,7 +79,7 @@ const LedgerReadPage = () => {
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const toggleSidebar = () => setSidebarOpen(prev => !prev);
 
-  const [periodFilter, setPeriodFilter] = useState('전체 내역 보기');
+  const [typeFilter, setTypeFilter] = useState('전체 내역 보기');
   const [categoryFilter, setCategoryFilter] = useState('카테고리 전체보기');
 
   const navigate = useNavigate();
@@ -77,37 +88,29 @@ const LedgerReadPage = () => {
     navigate('/ledger/write');
   };
 
-  // handleEditClick를 컴포넌트 내부에 정의
   const handleEditClick = (item: any) => {
     setSelectedItem(item);
     setEditModalOpen(true);
   };
 
-  // 삭제 버튼 클릭 이벤트 (임시)
   const handleDeleteClick = (id: number) => {
-    // TODO: 실제 삭제 로직 구현 필요
     console.log('삭제 요청 id:', id);
   };
 
-  // 날짜 필터링 헬퍼 함수 (예: 전체, 과거, 미래)
-  const filterByPeriod = (dateStr: string) => {
+  const isFutureDate = (dateStr: string) => {
     const today = new Date();
     const [year, month, day] = dateStr.split(' ')[0].split('.').map(Number);
     const itemDate = new Date(year, month - 1, day);
-
-    if (periodFilter === '전체 내역 보기') return true;
-    if (periodFilter === '과거 내역 보기') return itemDate < today;
-    if (periodFilter === '미래 내역 보기') return itemDate > today;
-    return true;
+    return itemDate > today;
   };
 
-  // 필터링된 데이터 계산 (useMemo로 최적화)
   const filteredData = useMemo(() => {
     return mockData
       .filter(item => {
-        if (!filterByPeriod(item.date)) return false;
-        if (categoryFilter === '카테고리 전체보기') return true;
-        return item.category === categoryFilter;
+        if (typeFilter === '수입 내역 보기' && item.type !== '수입') return false;
+        if (typeFilter === '지출 내역 보기' && item.type !== '지출') return false;
+        if (categoryFilter !== '카테고리 전체보기' && item.category !== categoryFilter) return false;
+        return true;
       })
       .sort((a, b) => {
         const toDate = (dateStr: string) => {
@@ -116,20 +119,21 @@ const LedgerReadPage = () => {
         };
         return toDate(b.date).getTime() - toDate(a.date).getTime(); // 내림차순 정렬
       });
-  }, [periodFilter, categoryFilter]);
+  }, [typeFilter, categoryFilter]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
-     <Header onToggleSidebar={toggleSidebar} />
+      <Header onToggleSidebar={toggleSidebar} />
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
         {isSidebarOpen && <Sidebar />}
         <PageWrapper>
           <LabelBox>박땡땡님의 가계부</LabelBox>
+
           <TopControls>
-            <SelectBox as="select" value={periodFilter} onChange={e => setPeriodFilter(e.target.value)}>
+            <SelectBox as="select" value={typeFilter} onChange={e => setTypeFilter(e.target.value)}>
               <option>전체 내역 보기</option>
-              <option>과거 내역 보기</option>
-              <option>미래 내역 보기</option>
+              <option>수입 내역 보기</option>
+              <option>지출 내역 보기</option>
             </SelectBox>
 
             <SelectBox as="select" value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}>
@@ -142,6 +146,7 @@ const LedgerReadPage = () => {
               <option>교육/자기계발</option>
               <option>여가/문화</option>
               <option>금융/기타</option>
+              <option>기타</option>
             </SelectBox>
 
             <StyledButton variant="primary" style={{ marginLeft: 'auto' }} onClick={handleWriteClick}>
@@ -199,13 +204,11 @@ const LedgerReadPage = () => {
             item={selectedItem}
             onClose={() => setEditModalOpen(false)}
             onSave={(updatedItem) => {
-              // 실제 저장 로직은 상태 관리 또는 API 요청 필요
               console.log('수정된 데이터:', updatedItem);
               setEditModalOpen(false);
             }}
           />
         )}
-
       </div>
     </div>
   );
