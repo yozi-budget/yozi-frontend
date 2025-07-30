@@ -4,8 +4,11 @@ import HomePage from './pages/home';
 import LedgerWritePage from './pages/ledger/write';
 import LedgerReadPage from './pages/ledger/read';
 import BudgetPage from './pages/budget';
-import MonthlyAnalysisPage from './pages/analysis/month'; // ✅ 이 경로로 수정
-import CategoryAnalysisPage from './pages/analysis/category'; // ✅ 카테고리 분석
+import MonthlyAnalysisPage from './pages/analysis/month'; 
+import CategoryAnalysisPage from './pages/analysis/category'; 
+import KakaoRedirectPage from './pages/auth/KakaoRedirectPage';    
+import GoogleRedirectPage from './pages/auth/GoogleRedirectPage';  
+import AuthSuccessPage from './pages/auth/success';
 
 import GlobalStyle from './styles/GlobalStyle';
 
@@ -21,6 +24,13 @@ function App() {
         <Route path="/budget" element={<BudgetPage />} />
         <Route path="/analysis/month" element={<MonthlyAnalysisPage />} /> {/* ✅ 분석 경로 추가 */}
         <Route path="/analysis/category" element={<CategoryAnalysisPage />} /> {/* ✅ 추가 */}
+
+  
+        <Route path="/auth/success" element={<AuthSuccessPage />} />
+
+        {/* OAuth Redirect 콜백 경로 */}
+        <Route path="/auth/kakao/callback" element={<KakaoRedirectPage />} />
+        <Route path="/auth/google/callback" element={<GoogleRedirectPage />} />
       </Routes>
     </BrowserRouter>
   );

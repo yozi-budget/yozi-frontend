@@ -11,7 +11,9 @@ const GoogleRedirectPage = () => {
 
     if (code) {
       axios
-        .post(`${import.meta.env.VITE_API_SERVER}/auth/google`, { code })
+        .get(`${import.meta.env.VITE_API_SERVER}/auth/google`, {
+          params: { code },
+        })
         .then((res: AxiosResponse<{ accessToken: string }>) => {
           console.log('구글 로그인 성공:', res.data);
           localStorage.setItem('accessToken', res.data.accessToken);

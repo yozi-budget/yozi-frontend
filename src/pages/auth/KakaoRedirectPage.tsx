@@ -8,16 +8,19 @@ const KakaoRedirectPage = () => {
 
   useEffect(() => {
     const code = new URL(window.location.href).searchParams.get('code');
+
     if (code) {
       axios
-        .post(`${import.meta.env.VITE_API_SERVER}/auth/kakao`, { code })
+        .get(`${import.meta.env.VITE_API_SERVER}/auth/kakao`, {
+          params: { code },
+        })
         .then((res: AxiosResponse<{ accessToken: string }>) => {
           console.log('로그인 성공:', res.data);
           localStorage.setItem('accessToken', res.data.accessToken);
-          navigate('/');
+          navigate('/home');
         })
         .catch((err: AxiosError) => {
-          console.error(err);
+          console.error('로그인 실패:', err);
           navigate('/login');
         });
     }

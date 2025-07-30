@@ -1,3 +1,4 @@
+import React from "react";
 import {
   BackgroundWrapper,
   BackgroundHalf,
@@ -11,19 +12,12 @@ import {
 
 import SocialButton from "@/components/common/SocialButton";
 
-const KAKAO_REST_API_KEY = import.meta.env.VITE_KAKAO_REST_API_KEY;
-const KAKAO_REDIRECT_URI = import.meta.env.VITE_KAKAO_REDIRECT_URI;
-
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-const GOOGLE_REDIRECT_URI = import.meta.env.VITE_GOOGLE_REDIRECT_URI;
-
-// 카카오 로그인 URL
-const kakaoAuthUrl = `https://kauth.kakao.com/oauth/authorize?client_id=${KAKAO_REST_API_KEY}&redirect_uri=${KAKAO_REDIRECT_URI}&response_type=code`;
-
-// 구글 로그인 URL
-const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${GOOGLE_REDIRECT_URI}&response_type=code&scope=openid%20email%20profile&access_type=offline&prompt=consent`;
-
 const SocialLoginPage = () => {
+  const handleSocialLogin = (socialType: "kakao" | "google") => {
+    // 백엔드 로그인 시작 URL로 이동 (백엔드가 리다이렉트 처리)
+    window.location.href = `${import.meta.env.VITE_API_BASE_URL}/auth/${socialType}`;
+  };
+
   return (
     <BackgroundWrapper>
       <BackgroundHalf />
@@ -42,13 +36,13 @@ const SocialLoginPage = () => {
           <SocialButton
             type="kakao"
             text="카카오 로그인"
-            onClick={() => (window.location.href = kakaoAuthUrl)}
+            onClick={() => handleSocialLogin("kakao")}
           />
 
           <SocialButton
             type="google"
             text="구글 로그인"
-            onClick={() => (window.location.href = googleAuthUrl)}
+            onClick={() => handleSocialLogin("google")}
           />
         </LoginBox>
       </ContentWrapper>
