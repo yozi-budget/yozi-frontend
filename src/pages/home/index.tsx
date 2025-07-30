@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import Modal from 'react-modal';
@@ -7,7 +7,7 @@ import Header from '@/components/layout/Header';
 import { LabelBox } from '@/components/common/LabelBox';
 import { useNavigate } from 'react-router-dom';
 import CalendarModal from '@/components/home/CalendarModal';
-
+import { getTransactions } from '@/api/transactions';
 
 import {
   Container,
@@ -51,34 +51,72 @@ const Home: React.FC = () => {
   const [date, setDate] = useState<CalendarValue>(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [financeData, setFinanceData] = useState<FinanceData>({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   const navigate = useNavigate();
 
+  // ✅ 가계부 작성 페이지 이동
   const handleWriteClick = () => {
     navigate('/ledger/write');
   };
 
+  // ✅ 사이드바 토글
   const toggleSidebar = () => setSidebarOpen(prev => !prev);
 
+  // ✅ 달력 날짜 클릭 → 모달 열기
   const openModal = (clickedDate: Date) => {
-  setDate(new Date(clickedDate));  // 새 Date 객체
-  setSelectedDate(clickedDate);
-  setIsModalOpen(true);
-};
+    setDate(new Date(clickedDate)); // 새 Date 객체
+    setSelectedDate(clickedDate);
+    setIsModalOpen(true);
+  };
 
   const closeModal = () => setIsModalOpen(false);
 
-  const [financeData, setFinanceData] = useState<FinanceData>({
-    '2025-07-03': [
-      { id: '1', type: 'income', amount: 2125000, description: '월급' },
-      { id: '2', type: 'expense', amount: 10000, description: '커피' },
-    ],
-    '2025-07-25': [
-      { id: '3', type: 'expense', amount: 10000, description: '넷플릭스 구독' },
-    ],
-    '2025-08-10': [
-      {id: '4', type: 'expense', amount: 300000, description: '축의금'}
-    ]
-  });
+  // ✅ 거래내역 API 호출
+  useEffect(() => {
+    const token = localStorage.getItem("accessToken");
+    if (!token) {
+      console.log("❌ 토큰 없음 → 로그인 페이지로 이동");
+      navigate("/");
+      return;
+    }
+
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const transactions = await getTransactions(); // ✅ API 호출
+        console.log("✅ API 응답:", transactions);
+
+        // ✅ 날짜별 그룹화
+        const grouped = transactions.reduce((acc: any, t: any) => {
+          const dateKey = t.transactionDate; // ex) "2025-07-30"
+          if (!acc[dateKey]) acc[dateKey] = [];
+          acc[dateKey].push({
+            id: t.id,
+            type: t.type === "INCOME" ? "income" : "expense",
+            amount: t.amount,
+            description: t.memo || t.categoryDisplayName || "내역 없음",
+          });
+          return acc;
+        }, {});
+
+        setFinanceData(grouped);
+      } catch (err) {
+        console.error("❌ 데이터 불러오기 실패", err);
+        setError("데이터를 불러오지 못했습니다.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [navigate]);
+
+  // ✅ 로딩 / 에러 처리
+  if (loading) return <div>⏳ 데이터를 불러오는 중입니다...</div>;
+  if (error) return <div>❌ {error}</div>;
 
   return (
     <Container>
@@ -96,7 +134,7 @@ const Home: React.FC = () => {
           <SummaryBox>
             <SummaryItem>
               <Title>이번 달 지출</Title>
-              <Amount type="expense">1,234,567원</Amount>
+              <Amount type="expense">1,234,567원</Amount> {/* ✅ 추후 계산 가능 */}
             </SummaryItem>
             <SummaryItem>
               <Title>이번 달 수입</Title>
@@ -122,19 +160,19 @@ const Home: React.FC = () => {
                   onClickDay={openModal}
                   tileContent={({ date, view }) => {
                     if (view !== 'month') return null;
-                    const ymd = date.toLocaleDateString('sv-SE'); 
+                    const ymd = date.toLocaleDateString('sv-SE');
                     const transactions = financeData[ymd];
                     if (!transactions) return null;
                     return (
-                        <div style={{ marginTop: 2 }}>
+                      <div style={{ marginTop: 2 }}>
                         {transactions.map((t, idx) => (
-                            <div key={idx} style={{ color: t.type === 'income' ? '#00C48C' : '#FF5A5F', fontSize: '0.7rem' }}>
+                          <div key={idx} style={{ color: t.type === 'income' ? '#00C48C' : '#FF5A5F', fontSize: '0.7rem' }}>
                             {t.amount.toLocaleString()}원
-                            </div>
+                          </div>
                         ))}
-                        </div>
+                      </div>
                     );
-                    }}
+                  }}
                 />
               </CalendarWrapper>
             </CalendarContainer>
@@ -155,12 +193,22 @@ const Home: React.FC = () => {
 
                         return (
                           <li key={`${dateStr}-${idx}`} onClick={() => openModal(parseYMD(dateStr))} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ backgroundColor: badgeColor, color: '#fff', borderRadius: '999px', padding: '2px 8px', fontSize: '12px', minWidth: '28px', textAlign: 'center' }}>
+                            <span style={{
+                              backgroundColor: badgeColor,
+                              color: '#fff',
+                              borderRadius: '999px',
+                              padding: '2px 8px',
+                              fontSize: '12px',
+                              minWidth: '28px',
+                              textAlign: 'center'
+                            }}>
                               {day}일
                             </span>
                             <div style={{ fontSize: '14px', color: '#495057', flex: 1 }}>
                               <div style={{ fontWeight: 'bold', color: textColor }}>{entry.description}</div>
-                              <div style={{ fontSize: '13px', color: '#868e96' }}>{entry.amount.toLocaleString()}원 / {entry.type === 'income' ? '수입' : '지출'}</div>
+                              <div style={{ fontSize: '13px', color: '#868e96' }}>
+                                {entry.amount.toLocaleString()}원 / {entry.type === 'income' ? '수입' : '지출'}
+                              </div>
                             </div>
                           </li>
                         );
@@ -170,13 +218,13 @@ const Home: React.FC = () => {
               </div>
             </ScheduleBox>
           </CalendarAndSchedule>
-        
-        <CalendarModal
-          isOpen={isModalOpen}
-          onClose={closeModal}
-          selectedDate={selectedDate}
-          transactions={financeData[selectedDate?.toLocaleDateString('sv-SE') || '']}
-        />
+
+          <CalendarModal
+            isOpen={isModalOpen}
+            onClose={closeModal}
+            selectedDate={selectedDate}
+            transactions={financeData[selectedDate?.toLocaleDateString('sv-SE') || '']}
+          />
         </ContentWrapper>
       </MainLayout>
     </Container>
