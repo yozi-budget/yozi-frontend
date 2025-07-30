@@ -13,12 +13,10 @@ export interface Transaction {
   transactionDate: string; // yyyy-mm-dd
 }
 
-// 토큰 자동 포함해서 거래 내역 가져오기
 export const getTransactions = async (): Promise<Transaction[]> => {
   try {
     const token = localStorage.getItem("accessToken");
     console.log("👉 프론트에서 가져온 토큰:", token);
-    if (!token) throw new Error("토큰이 없습니다. 로그인 해주세요.");
 
     const res = await api.get<Transaction[]>('/api/transactions', {
       headers: {
@@ -27,8 +25,13 @@ export const getTransactions = async (): Promise<Transaction[]> => {
     });
 
     return res.data;
-  } catch (error) {
-    console.error("❌ 거래 내역 가져오기 실패:", error);
+  } catch (error: any) {
+    // 🔥 여기서 에러 상세 확인
+    if (error.response) {
+      console.error("❌ 데이터 불러오기 실패 (백엔드 응답)", error.response.status, error.response.data);
+    } else {
+      console.error("❌ 데이터 불러오기 실패 (네트워크 문제?)", error);
+    }
     throw error;
   }
 };
