@@ -132,12 +132,11 @@ export const CalendarWrapper = styled.div`
   }
 
   .react-calendar__tile--active {
-    background: #228be6 !important;
-    color: white !important;
-    border-radius: 10px;
-    border-radius: 0;
-
-  }
+  background: transparent !important; /* 배경색 없애기 */
+  color: #228be6 !important;          /* 글자색은 강조색 유지 */
+  border: 2px solid #228be6 !important; /* 테두리 두께와 색상 설정 */
+  border-radius: 0px;
+}
 
   .react-calendar__month-view__days__day--weekend {
     color: #333 !important;

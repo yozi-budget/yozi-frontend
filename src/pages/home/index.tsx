@@ -59,21 +59,25 @@ const Home: React.FC = () => {
 
   const toggleSidebar = () => setSidebarOpen(prev => !prev);
 
-  const openModal = (date: Date) => {
-    setSelectedDate(date);
-    setIsModalOpen(true);
-  };
+  const openModal = (clickedDate: Date) => {
+  setDate(new Date(clickedDate));  // 새 Date 객체
+  setSelectedDate(clickedDate);
+  setIsModalOpen(true);
+};
 
   const closeModal = () => setIsModalOpen(false);
 
   const [financeData, setFinanceData] = useState<FinanceData>({
     '2025-07-03': [
-      { id: '1', type: 'income', amount: 125000, description: '월급' },
+      { id: '1', type: 'income', amount: 2125000, description: '월급' },
       { id: '2', type: 'expense', amount: 10000, description: '커피' },
     ],
     '2025-07-25': [
       { id: '3', type: 'expense', amount: 10000, description: '넷플릭스 구독' },
     ],
+    '2025-08-10': [
+      {id: '4', type: 'expense', amount: 300000, description: '축의금'}
+    ]
   });
 
   return (
@@ -111,6 +115,7 @@ const Home: React.FC = () => {
               </h3>
               <CalendarWrapper>
                 <Calendar
+                  key={(date as Date).toISOString()}
                   onChange={(value) => setDate(value as CalendarValue)}
                   value={date}
                   locale="ko-KR"
@@ -149,7 +154,7 @@ const Home: React.FC = () => {
                         const textColor = badgeColor;
 
                         return (
-                          <li key={`${dateStr}-${idx}`} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <li key={`${dateStr}-${idx}`} onClick={() => openModal(parseYMD(dateStr))} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <span style={{ backgroundColor: badgeColor, color: '#fff', borderRadius: '999px', padding: '2px 8px', fontSize: '12px', minWidth: '28px', textAlign: 'center' }}>
                               {day}일
                             </span>
