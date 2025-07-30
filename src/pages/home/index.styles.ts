@@ -182,16 +182,6 @@ export const ScheduleBox = styled.div`
   display: none; 
   }
 
-  .edit-btn {
-    background-color: #e6f0ff;
-    color: #228be6;
-    border: none;
-    padding: 8px 12px;
-    border-radius: 8px;
-    cursor: pointer;
-    flex-shrink: 0;
-  }
-
 }
 
 `;

@@ -3,8 +3,8 @@
     "composite": true,
     "noEmit": false,
     "module": "ESNext",
-    "target": "esnext",                // esnext로 변경 (또는 es2022)
-    "moduleResolution": "node",       // bundler → node
+    "target": "esnext",            
+    "moduleResolution": "node",     
     "skipLibCheck": true,
     "strict": true
   },

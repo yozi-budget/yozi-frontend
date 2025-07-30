@@ -163,38 +163,9 @@ const Home: React.FC = () => {
                     )}
                 </ul>
               </div>
-              <button className="edit-btn">금융 일정 수정하기</button>
             </ScheduleBox>
           </CalendarAndSchedule>
-
-          {/* <Modal
-            isOpen={isModalOpen}
-            onRequestClose={closeModal}
-            contentLabel="상세 내역"
-            style={{ content: { width: '300px', margin: 'auto', padding: '20px', borderRadius: '12px' } }}
-          >
-            {selectedDate && (
-              <>
-                <h3>{selectedDate.toLocaleDateString('ko-KR')}</h3>
-                <hr />
-                {(() => {
-                  const key = selectedDate.toLocaleDateString('sv-SE'); 
-                  const data = financeData[key];
-                  if (!data || data.length === 0) return <p>내역이 없습니다.</p>;
-                  return data.map((entry, i) => (
-                    <p key={i} style={{ color: entry.type === 'income' ? '#00C48C' : '#FF5A5F' }}>
-                      {entry.description}: {entry.amount.toLocaleString()}원 ({entry.type === 'income' ? '수입' : '지출'})
-                    </p>
-                  ));
-                })()}
-                <button onClick={closeModal} style={{ marginTop: '20px', padding: '8px 12px', backgroundColor: '#228be6', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>
-                  닫기
-                </button>
-              </>
-            )}
-          </Modal> */}
-
-          
+        
         <CalendarModal
           isOpen={isModalOpen}
           onClose={closeModal}

@@ -44,3 +44,10 @@ coverage/
 
 # System files
 Thumbs.db
+
+# TypeScript incremental compilation cache
+*.tsbuildinfo
+
+# TypeScript compiled output inside src
+src/**/*.js
+src/**/*.d.ts
