@@ -1,4 +1,3 @@
-// pages/analysis/month/index.tsx
 import React, { useState } from 'react';
 import Header from '@/components/layout/Header';
 import Sidebar from '@/components/layout/Sidebar';
@@ -78,7 +77,7 @@ const MonthlyAnalysis: React.FC = () => {
               {/* 2. 고정 지출 */}
               <Card>
                 <FixedExpenseContainer>
-                  <ChartTitle>6월 고정지출</ChartTitle>
+                  <ChartTitle>6월 지출 내역</ChartTitle>
 
                   <FixedExpenseList>
                     <FixedExpenseItem>
