@@ -17,6 +17,7 @@ export interface Transaction {
 export const getTransactions = async (): Promise<Transaction[]> => {
   try {
     const token = localStorage.getItem("accessToken");
+    console.log("👉 프론트에서 가져온 토큰:", token);
     if (!token) throw new Error("토큰이 없습니다. 로그인 해주세요.");
 
     const res = await api.get<Transaction[]>('/api/transactions', {
