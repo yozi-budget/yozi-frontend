@@ -11,13 +11,13 @@ const AuthSuccessPage = () => {
 
   if (token) {
     localStorage.setItem("accessToken", token);
-    console.log("✅ 토큰 저장 완료, /home으로 이동 시도");
+    console.log("토큰 저장 완료, /home으로 이동 시도");
     setTimeout(() => {
-      console.log("✅ navigate 호출");
+      console.log("navigate 호출");
       navigate('/home');
     }, 100);
   } else {
-    console.log("❌ 토큰 없음, /로 이동");
+    console.log("토큰 없음, /로 이동");
     navigate("/");
   }
 }, [navigate]);

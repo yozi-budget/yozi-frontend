@@ -22,15 +22,15 @@ function App() {
         <Route path="/ledger/write" element={<LedgerWritePage />} />
         <Route path="/ledger/read" element={<LedgerReadPage />} />
         <Route path="/budget" element={<BudgetPage />} />
-        <Route path="/analysis/month" element={<MonthlyAnalysisPage />} /> {/* ✅ 분석 경로 추가 */}
-        <Route path="/analysis/category" element={<CategoryAnalysisPage />} /> {/* ✅ 추가 */}
+        <Route path="/analysis/month" element={<MonthlyAnalysisPage />} /> 
+        <Route path="/analysis/category" element={<CategoryAnalysisPage />} /> 
 
   
-        <Route path="/auth/success" element={<AuthSuccessPage />} />
-
         {/* OAuth Redirect 콜백 경로 */}
         <Route path="/auth/kakao/callback" element={<KakaoRedirectPage />} />
         <Route path="/auth/google/callback" element={<GoogleRedirectPage />} />
+        <Route path="/auth/success" element={<AuthSuccessPage />} />
+
       </Routes>
     </BrowserRouter>
   );
