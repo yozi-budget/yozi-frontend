@@ -1,8 +1,6 @@
 {
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "http://43.202.244.116:8080/api/$1" }
-  ],
-  "routes": [
-    { "src": "/[^.]+", "dest": "/", "status": 200 }
+    { "source": "/api/(.*)", "destination": "http://43.202.244.116:8080/api/$1" },
+    { "source": "/(.*)", "destination": "/" }
   ]
 }
