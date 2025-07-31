@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://43.202.244.116:8080", // API 서버 주소
+  baseURL: "https://mallangorder.site", // API 서버 주소
   headers: {
     "Content-Type": "application/json",
   },
