@@ -172,13 +172,14 @@ const LedgerWritePage = () => {
                   </TableCell>
                   <TableCell>
                     <Select
-                      value={row.categoryId}
+                      value={row.categoryId.toString()} // 숫자를 문자열로 변환
                       onChange={(e) =>
                         handleChange(idx, 'categoryId', Number(e.target.value))
-                      }>
-                      <option value={0} disabled hidden>선택</option>
+                      }
+                    >
+                      <option value="0" disabled hidden>선택</option>
                       {categories.map(cat => (
-                        <option key={cat.id} value={cat.id}>
+                        <option key={cat.id} value={cat.id.toString()}>
                           {cat.displayName}
                         </option>
                       ))}
