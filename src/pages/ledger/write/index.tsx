@@ -20,6 +20,7 @@ import {
 
 import { getCategories, Category } from '@/api/categories';
 import { postTransaction } from '@/api/transactions';
+import { decodeToken } from '@/utils/auth'; 
 
 // Row 타입 선언
 interface Row {
@@ -84,7 +85,19 @@ const LedgerWritePage = () => {
 
   const handleSubmit = async () => {
     try {
-      const userId = 0; // 실제 로그인 유저 ID로 바꾸세요
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        alert('로그인이 필요합니다.');
+        return;
+      }
+
+      const decoded = decodeToken(token);
+      if (!decoded || !decoded.userId) {
+        alert('유효하지 않은 토큰입니다.');
+        return;
+      }
+
+      const userId = decoded.userId;
 
       for (const row of rows) {
         if (
@@ -172,12 +185,11 @@ const LedgerWritePage = () => {
                   </TableCell>
                   <TableCell>
                     <Select
-                      value={row.categoryId !== undefined ? row.categoryId.toString() : ""}
+                      value={row.categoryId.toString()}
                       onChange={(e) =>
                         handleChange(idx, 'categoryId', Number(e.target.value))
-                      }
-                    >
-                      <option value="0" disabled hidden>선택</option>
+                      }>
+                      <option value={0} disabled hidden>선택</option>
                       {categories.map(cat => (
                         <option key={cat.id} value={cat.id.toString()}>
                           {cat.displayName}
