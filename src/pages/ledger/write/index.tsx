@@ -185,11 +185,11 @@ const LedgerWritePage = () => {
                   </TableCell>
                   <TableCell>
                     <Select
-                      value={row.categoryId.toString()}
+                      value={row.categoryId ? row.categoryId.toString() : ''}
                       onChange={(e) =>
                         handleChange(idx, 'categoryId', Number(e.target.value))
-                      }>
-                      <option value={0} disabled hidden>선택</option>
+                    }>
+                      <option value="" disabled hidden>선택</option>
                       {categories.map(cat => (
                         <option key={cat.id} value={cat.id.toString()}>
                           {cat.displayName}
