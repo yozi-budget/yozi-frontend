@@ -74,11 +74,10 @@ const MonthlyAnalysis: React.FC = () => {
 
               <div style={{ flexGrow: 1 }} />
 
-              {/* 2. 고정 지출 */}
+              {/* 2. 지출 내역 */}
               <Card>
                 <FixedExpenseContainer>
                   <ChartTitle>6월 지출 내역</ChartTitle>
-
                   <FixedExpenseList>
                     <FixedExpenseItem>
                       <span className="date">15일</span>

@@ -26,7 +26,7 @@ export const getTransactions = async (): Promise<Transaction[]> => {
 
     return res.data;
   } catch (error: any) {
-    // 🔥 여기서 에러 상세 확인
+    // 에러 상세 확인
     if (error.response) {
       console.error("❌ 데이터 불러오기 실패 (백엔드 응답)", error.response.status, error.response.data);
     } else {
