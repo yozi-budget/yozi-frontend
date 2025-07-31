@@ -1,7 +1,8 @@
+// src/api/axios.ts - axios 인스턴스 설정
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "https://mallangorder.site", // API 서버 주소
+  baseURL: import.meta.env.VITE_API_BASE_URL, // .env의 환경 변수 사용
   headers: {
     "Content-Type": "application/json",
   },

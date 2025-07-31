@@ -1,3 +1,5 @@
+// pages/ledger/read/index.tsx
+
 import React, { useState, useMemo } from 'react';
 import Sidebar from '@/components/layout/Sidebar';
 import Header from '@/components/layout/Header';

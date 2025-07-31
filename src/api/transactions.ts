@@ -1,4 +1,5 @@
-import api from './axios';  
+// src/api/transactions.ts
+import api from './axios';
 
 export interface Transaction {
   id: number;
@@ -26,12 +27,32 @@ export const getTransactions = async (): Promise<Transaction[]> => {
 
     return res.data;
   } catch (error: any) {
-    // 에러 상세 확인
     if (error.response) {
       console.error("❌ 데이터 불러오기 실패 (백엔드 응답)", error.response.status, error.response.data);
     } else {
       console.error("❌ 데이터 불러오기 실패 (네트워크 문제?)", error);
     }
+    throw error;
+  }
+};
+
+export interface TransactionPostData {
+  userId: number;
+  type: 'INCOME' | 'EXPENSE';
+  categoryId: number;
+  paymentMethod: 'CASH' | 'CARD';
+  vendor: string;
+  amount: number;
+  memo: string;
+  transactionDate: string;
+}
+
+export const postTransaction = async (data: TransactionPostData) => {
+  try {
+    const res = await api.post('/api/transactions', data);
+    return res.data;
+  } catch (error) {
+    console.error('❌ 거래 등록 실패', error);
     throw error;
   }
 };

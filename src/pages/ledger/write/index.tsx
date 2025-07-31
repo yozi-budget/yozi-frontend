@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from '@/components/layout/Sidebar';
 import Header from '@/components/layout/Header';
 import StyledButton from '@/components/common/StyledButton';
@@ -18,41 +18,113 @@ import {
   AmountWrapper
 } from './index.styles';
 
-const initialRow = {
+import { getCategories, Category } from '@/api/categories';
+import { postTransaction } from '@/api/transactions';
+
+// Row 타입 선언
+interface Row {
+  type: string;
+  date: string;
+  categoryId: number;
+  method: string;
+  place: string;
+  amount: string;
+  memo: string;
+}
+
+const initialRow: Row = {
   type: '',
   date: '',
-  category: '',
+  categoryId: 0,
   method: '',
   place: '',
   amount: '',
   memo: ''
 };
 
+
 const LedgerWritePage = () => {
   const [rows, setRows] = useState([initialRow]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [isSidebarOpen, setSidebarOpen] = useState(true);
+  const navigate = useNavigate();
 
-  const handleChange = (index: number, field: string, value: string) => {
+  useEffect(() => {
+    // 카테고리 API 호출해서 셀렉트 옵션 세팅
+    const fetchCategories = async () => {
+      try {
+        const data = await getCategories();
+        setCategories(data);
+      } catch (error) {
+        alert('카테고리 정보를 불러오는데 실패했습니다.');
+      }
+    };
+    fetchCategories();
+  }, []);
+
+  const handleChange = (
+    index: number,
+    field: keyof Row,
+    value: string | number
+  ) => {
     const newRows = [...rows];
-    newRows[index][field as keyof typeof initialRow] = value;
+    // categoryId와 amount는 number로 저장해야 할 수 있으니 아래처럼 처리
+    if (field === 'categoryId') {
+      newRows[index][field] = Number(value) as any;
+    } else {
+      newRows[index][field] = value as any;
+    }
     setRows(newRows);
   };
+
 
   const handleAddRow = () => {
     setRows([...rows, { ...initialRow }]);
   };
 
-  const handleSubmit = () => {
-    console.log(rows);
-    // API 전송 등 처리
+  const handleSubmit = async () => {
+    try {
+      const userId = 0; // 실제 로그인 유저 ID로 바꾸세요
+
+      for (const row of rows) {
+        if (
+          !row.type ||
+          !row.date ||
+          !row.categoryId ||
+          !row.method ||
+          !row.place ||
+          !row.amount
+        ) {
+          alert('모든 필드를 정확히 입력해주세요.');
+          return;
+        }
+
+        const type = row.type === '수입' ? 'INCOME' : 'EXPENSE';
+        const paymentMethod = row.method === '현금' ? 'CASH' : 'CARD';
+
+        await postTransaction({
+          userId,
+          type,
+          categoryId: Number(row.categoryId),
+          paymentMethod,
+          vendor: row.place,
+          amount: Number(row.amount),
+          memo: row.memo || '',
+          transactionDate: row.date,
+        });
+      }
+
+      alert('가계부 내역이 저장되었습니다.');
+      navigate('/ledger/read');
+    } catch (error) {
+      alert('저장 중 오류가 발생했습니다.');
+      console.error(error);
+    }
   };
 
-  const navigate = useNavigate();
-    
-      const handleReadClick = () => {
-        navigate('/ledger/read');
-      };
-
+  const handleReadClick = () => {
+    navigate('/ledger/read');
+  };
 
   const toggleSidebar = () => setSidebarOpen(prev => !prev);
 
@@ -81,8 +153,9 @@ const LedgerWritePage = () => {
                   <TableCell>
                     <Select
                       value={row.type}
-                      onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                        handleChange(idx, 'type', e.target.value)}>
+                      onChange={(e) =>
+                        handleChange(idx, 'type', e.target.value)
+                      }>
                       <option value="" disabled hidden>선택</option>
                       <option value="지출">지출</option>
                       <option value="수입">수입</option>
@@ -92,31 +165,31 @@ const LedgerWritePage = () => {
                     <Input
                       type="date"
                       value={row.date}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                        handleChange(idx, 'date', e.target.value)}
+                      onChange={(e) =>
+                        handleChange(idx, 'date', e.target.value)
+                      }
                     />
                   </TableCell>
                   <TableCell>
                     <Select
-                      value={row.category}
-                      onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                        handleChange(idx, 'category', e.target.value)}>
-                      <option value="" disabled hidden>선택</option>
-                      <option value="식료품/외식">식료품/외식</option>
-                      <option value="주거/공과금">주거/공과금</option>
-                      <option value="교통/차량">교통/차량</option>
-                      <option value="쇼핑/패션">쇼핑/패션</option>
-                      <option value="건강/의료">건강/의료</option>
-                      <option value="교육/자기계발">교육/자기계발</option>
-                      <option value="여가/문화">여가/문화</option>
-                      <option value="금융/기타">금융/기타</option>
+                      value={row.categoryId}
+                      onChange={(e) =>
+                        handleChange(idx, 'categoryId', Number(e.target.value))
+                      }>
+                      <option value={0} disabled hidden>선택</option>
+                      {categories.map(cat => (
+                        <option key={cat.id} value={cat.id}>
+                          {cat.displayName}
+                        </option>
+                      ))}
                     </Select>
                   </TableCell>
                   <TableCell>
                     <Select
                       value={row.method}
-                      onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                        handleChange(idx, 'method', e.target.value)}>
+                      onChange={(e) =>
+                        handleChange(idx, 'method', e.target.value)
+                      }>
                       <option value="" disabled hidden>선택</option>
                       <option value="현금">현금</option>
                       <option value="카드">카드</option>
@@ -125,8 +198,9 @@ const LedgerWritePage = () => {
                   <TableCell>
                     <Input
                       value={row.place}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                        handleChange(idx, 'place', e.target.value)}
+                      onChange={(e) =>
+                        handleChange(idx, 'place', e.target.value)
+                      }
                     />
                   </TableCell>
                   <TableCell>
@@ -134,8 +208,9 @@ const LedgerWritePage = () => {
                       <Input
                         type="number"
                         value={row.amount}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                          handleChange(idx, 'amount', e.target.value)}
+                        onChange={(e) =>
+                          handleChange(idx, 'amount', e.target.value)
+                        }
                       />
                       <span>원</span>
                     </AmountWrapper>
@@ -143,8 +218,9 @@ const LedgerWritePage = () => {
                   <TableCell>
                     <MemoInput
                       value={row.memo}
-                      onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-                        handleChange(idx, 'memo', e.target.value)}
+                      onChange={(e) =>
+                        handleChange(idx, 'memo', e.target.value)
+                      }
                     />
                   </TableCell>
                 </TableRow>
@@ -153,7 +229,7 @@ const LedgerWritePage = () => {
           </Table>
           <AddRowButton onClick={handleAddRow}>+ 행 추가</AddRowButton>
           <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
-            <StyledButton variant="primary" onClick={handleReadClick}>
+            <StyledButton variant="primary" onClick={handleSubmit}>
               작성 완료
             </StyledButton>
           </div>

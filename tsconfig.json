@@ -13,12 +13,14 @@
       "@/*": ["src/*"]
     },
     "skipLibCheck": true,
+    "noEmit": true,
 
-    "noEmit": true
+    // 여기에 추가
+    "types": ["vite/client"]
   },
     "include": ["src", "**/*.d.ts"],
-  "references": [
-    { "path": "./tsconfig.app.json" },
-    { "path": "./tsconfig.node.json" }
-  ]
+    "references": [
+      { "path": "./tsconfig.app.json" },
+      { "path": "./tsconfig.node.json" }
+    ]
 }
