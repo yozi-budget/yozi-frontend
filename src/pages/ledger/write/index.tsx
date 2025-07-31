@@ -172,7 +172,7 @@ const LedgerWritePage = () => {
                   </TableCell>
                   <TableCell>
                     <Select
-                      value={row.categoryId.toString()} // 숫자를 문자열로 변환
+                      value={row.categoryId !== undefined ? row.categoryId.toString() : ""}
                       onChange={(e) =>
                         handleChange(idx, 'categoryId', Number(e.target.value))
                       }
