@@ -1,3 +1,4 @@
+// api/categories.ts
 import api from './axios';
 
 export interface Category {

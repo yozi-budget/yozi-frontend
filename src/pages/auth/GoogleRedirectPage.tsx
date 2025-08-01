@@ -21,7 +21,7 @@ const GoogleRedirectPage = () => {
         })
         .catch((err: AxiosError) => {
           console.error(err);
-          navigate('/login');
+          navigate('/');
         });
     }
   }, [navigate]);

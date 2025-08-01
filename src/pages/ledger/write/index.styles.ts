@@ -85,6 +85,22 @@ export const AddRowButton = styled.button`
   font-size: 14px;
 `;
 
+export const DeleteButton = styled.button`
+  background: transparent;
+  border: none;
+  color: #888;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px;
+  transition: color 0.2s, background-color 0.2s;
+  
+  &:hover {
+    color: #e74c3c; /* 빨간색 계열 */
+    background-color: #f9f9f9;
+    border-radius: 4px;
+  }
+`;
+
 export const SubmitButton = styled.button`
   margin-top: 30px;
   align-self: center;

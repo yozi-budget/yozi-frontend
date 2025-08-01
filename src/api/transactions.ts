@@ -1,10 +1,10 @@
 // src/api/transactions.ts
-import api from './axios';
+import api from "./axios";
 
 export interface Transaction {
   id: number;
   userNickname: string;
-  type: 'INCOME' | 'EXPENSE';
+  type: "INCOME" | "EXPENSE";
   categoryId: number;
   categoryDisplayName: string;
   paymentMethod: string;
@@ -16,15 +16,7 @@ export interface Transaction {
 
 export const getTransactions = async (): Promise<Transaction[]> => {
   try {
-    const token = localStorage.getItem("accessToken");
-    console.log("👉 프론트에서 가져온 토큰:", token);
-
-    const res = await api.get<Transaction[]>('/api/transactions', {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
+    const res = await api.get<Transaction[]>("/api/transactions");
     return res.data;
   } catch (error: any) {
     if (error.response) {
@@ -37,10 +29,9 @@ export const getTransactions = async (): Promise<Transaction[]> => {
 };
 
 export interface TransactionPostData {
-  userId: number;
-  type: 'INCOME' | 'EXPENSE';
+  type: "INCOME" | "EXPENSE";
   categoryId: number;
-  paymentMethod: 'CASH' | 'CARD';
+  paymentMethod: "CASH" | "CARD";
   vendor: string;
   amount: number;
   memo: string;
@@ -49,10 +40,10 @@ export interface TransactionPostData {
 
 export const postTransaction = async (data: TransactionPostData) => {
   try {
-    const res = await api.post('/api/transactions', data);
+    const res = await api.post("/api/transactions", data);
     return res.data;
   } catch (error) {
-    console.error('❌ 거래 등록 실패', error);
+    console.error("❌ 거래 등록 실패", error);
     throw error;
   }
 };

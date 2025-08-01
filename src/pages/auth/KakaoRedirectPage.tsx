@@ -21,7 +21,7 @@ const KakaoRedirectPage = () => {
         })
         .catch((err: AxiosError) => {
           console.error('로그인 실패:', err);
-          navigate('/login');
+          navigate('/');
         });
     }
   }, [navigate]);

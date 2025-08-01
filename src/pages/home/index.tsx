@@ -1,3 +1,5 @@
+// pages/home/index.tsx
+
 import React, { useState, useEffect } from 'react';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
@@ -8,6 +10,10 @@ import { LabelBox } from '@/components/common/LabelBox';
 import { useNavigate } from 'react-router-dom';
 import CalendarModal from '@/components/home/CalendarModal';
 import { getTransactions } from '@/api/transactions';
+import { useUserStore } from '@/store/userStore';
+
+import { getHomeData } from '@/api/home';
+import { HomeDataResponse } from '@/types/home';
 
 import {
   Container,
@@ -27,7 +33,7 @@ import StyledButton from '@/components/common/StyledButton';
 
 type CalendarValue = Date | [Date, Date];
 
-// Transaction type
+// 날짜별 내역
 interface Transaction {
   id: string;
   type: 'income' | 'expense';
@@ -35,12 +41,10 @@ interface Transaction {
   description: string;
 }
 
-// 날짜별 내역
 type FinanceData = Record<string, Transaction[]>;
 
 Modal.setAppElement('#root');
 
-// 날짜 문자열(YMD)을 Date 객체로 정확히 파싱 (시차 문제 방지)
 const parseYMD = (ymd: string) => {
   const [y, m, d] = ymd.split('-').map(Number);
   return new Date(y, m - 1, d);
@@ -54,27 +58,25 @@ const Home: React.FC = () => {
   const [financeData, setFinanceData] = useState<FinanceData>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const nickname = useUserStore((state) => state.nickname);
+  const [data, setData] = useState<HomeDataResponse | null>(null);
 
   const navigate = useNavigate();
 
-  // ✅ 가계부 작성 페이지 이동
   const handleWriteClick = () => {
     navigate('/ledger/write');
   };
 
-  // ✅ 사이드바 토글
   const toggleSidebar = () => setSidebarOpen(prev => !prev);
 
-  // ✅ 달력 날짜 클릭 → 모달 열기
   const openModal = (clickedDate: Date) => {
-    setDate(new Date(clickedDate)); // 새 Date 객체
+    setDate(new Date(clickedDate));
     setSelectedDate(clickedDate);
     setIsModalOpen(true);
   };
 
   const closeModal = () => setIsModalOpen(false);
 
-  // ✅ 거래내역 API 호출
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
     if (!token) {
@@ -86,18 +88,18 @@ const Home: React.FC = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const transactions = await getTransactions(); // ✅ API 호출
-        console.log("✅ API 응답:", transactions);
 
-        // ✅ 날짜별 그룹화
-        const grouped = transactions.reduce((acc: any, t: any) => {
-          const dateKey = t.transactionDate; // ex) "2025-07-30"
+        const homeData = await getHomeData();
+        setData(homeData);
+
+        const grouped = homeData.transactions.reduce((acc: FinanceData, t) => {
+          const dateKey = t.transactionDate;
           if (!acc[dateKey]) acc[dateKey] = [];
           acc[dateKey].push({
-            id: t.id,
-            type: t.type === "INCOME" ? "income" : "expense",
+            id: String(t.id),
+            type: t.type === 'INCOME' ? 'income' : 'expense',
             amount: t.amount,
-            description: t.memo || t.categoryDisplayName || "내역 없음",
+            description: t.memo || t.categoryDisplayName || '내역 없음',
           });
           return acc;
         }, {});
@@ -114,7 +116,6 @@ const Home: React.FC = () => {
     fetchData();
   }, [navigate]);
 
-  // ✅ 로딩 / 에러 처리
   if (loading) return <div>⏳ 데이터를 불러오는 중입니다...</div>;
   if (error) return <div>❌ {error}</div>;
 
@@ -125,7 +126,9 @@ const Home: React.FC = () => {
         {isSidebarOpen && <Sidebar />}
         <ContentWrapper>
           <TopButtonRow>
-            <LabelBox $variant="outline">박땡땡님의 가계부</LabelBox>
+            <LabelBox $variant="outline">
+              {nickname ? `${nickname}님의 가계부` : '가계부'}
+            </LabelBox>
             <StyledButton variant="primary" onClick={handleWriteClick}>
               가계부 작성하기
             </StyledButton>
@@ -134,15 +137,15 @@ const Home: React.FC = () => {
           <SummaryBox>
             <SummaryItem>
               <Title>이번 달 지출</Title>
-              <Amount type="expense">1,234,567원</Amount> {/* ✅ 추후 계산 가능 */}
+              <Amount type="expense">{data?.summary.expense.toLocaleString()}원</Amount>
             </SummaryItem>
             <SummaryItem>
               <Title>이번 달 수입</Title>
-              <Amount type="income">1,234,567원</Amount>
+              <Amount type="income">{data?.summary.income.toLocaleString()}원</Amount>
             </SummaryItem>
             <SummaryItem>
               <Title>예산</Title>
-              <Amount type="budget">1,234,567원</Amount>
+              <Amount type="budget">{data?.summary.budget.toLocaleString()}원</Amount>
             </SummaryItem>
           </SummaryBox>
 

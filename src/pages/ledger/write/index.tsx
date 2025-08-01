@@ -1,28 +1,26 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Sidebar from '@/components/layout/Sidebar';
 import Header from '@/components/layout/Header';
 import StyledButton from '@/components/common/StyledButton';
 import { LabelBox } from '@/components/common/LabelBox';
 import { useNavigate } from 'react-router-dom';
+import { useCategoryStore } from '@/store/categoryStore';
+import { postTransaction } from '@/api/transactions';
 
 import {
-  PageWrapper,
+  PageWrapper, 
   Table,
   TableHeader,
   TableRow,
   TableCell,
   AddRowButton,
+  DeleteButton,
   Select,
   Input,
   MemoInput,
   AmountWrapper
 } from './index.styles';
 
-import { getCategories, Category } from '@/api/categories';
-import { postTransaction } from '@/api/transactions';
-import { decodeToken } from '@/utils/auth'; 
-
-// Row 타입 선언
 interface Row {
   type: string;
   date: string;
@@ -43,25 +41,13 @@ const initialRow: Row = {
   memo: ''
 };
 
-
 const LedgerWritePage = () => {
   const [rows, setRows] = useState([initialRow]);
-  const [categories, setCategories] = useState<Category[]>([]);
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    // 카테고리 API 호출해서 셀렉트 옵션 세팅
-    const fetchCategories = async () => {
-      try {
-        const data = await getCategories();
-        setCategories(data);
-      } catch (error) {
-        alert('카테고리 정보를 불러오는데 실패했습니다.');
-      }
-    };
-    fetchCategories();
-  }, []);
+  // ✅ 카테고리 상태 관리 훅 사용 (zustand)
+  const categories = useCategoryStore(state => state.categories);
 
   const handleChange = (
     index: number,
@@ -69,7 +55,6 @@ const LedgerWritePage = () => {
     value: string | number
   ) => {
     const newRows = [...rows];
-    // categoryId와 amount는 number로 저장해야 할 수 있으니 아래처럼 처리
     if (field === 'categoryId') {
       newRows[index][field] = Number(value) as any;
     } else {
@@ -78,27 +63,12 @@ const LedgerWritePage = () => {
     setRows(newRows);
   };
 
-
   const handleAddRow = () => {
     setRows([...rows, { ...initialRow }]);
   };
 
   const handleSubmit = async () => {
     try {
-      const token = localStorage.getItem('accessToken');
-      if (!token) {
-        alert('로그인이 필요합니다.');
-        return;
-      }
-
-      const decoded = decodeToken(token);
-      if (!decoded || !decoded.userId) {
-        alert('유효하지 않은 토큰입니다.');
-        return;
-      }
-
-      const userId = decoded.userId;
-
       for (const row of rows) {
         if (
           !row.type ||
@@ -116,7 +86,6 @@ const LedgerWritePage = () => {
         const paymentMethod = row.method === '현금' ? 'CASH' : 'CARD';
 
         await postTransaction({
-          userId,
           type,
           categoryId: Number(row.categoryId),
           paymentMethod,
@@ -135,8 +104,13 @@ const LedgerWritePage = () => {
     }
   };
 
-  const handleReadClick = () => {
-    navigate('/ledger/read');
+  const handleDeleteRow = (index: number) => {
+    if (rows.length === 1) {
+      alert('최소 한 개의 행은 남겨야 합니다.');
+      return;
+    }
+    const updatedRows = rows.filter((_, i) => i !== index);
+    setRows(updatedRows);
   };
 
   const toggleSidebar = () => setSidebarOpen(prev => !prev);
@@ -235,6 +209,9 @@ const LedgerWritePage = () => {
                         handleChange(idx, 'memo', e.target.value)
                       }
                     />
+                  </TableCell>
+                  <TableCell>
+                      <DeleteButton onClick={() => handleDeleteRow(idx)}>삭제</DeleteButton>
                   </TableCell>
                 </TableRow>
               ))}
