@@ -10,6 +10,7 @@ export enum PaymentMethod {
   CARD = "CARD",
 }
 
+// 요청용 타입 (id 없음)
 export interface TransactionRequest {
   type: TransactionType;
   categoryId: number;
@@ -18,4 +19,9 @@ export interface TransactionRequest {
   amount: number;
   memo: string;
   transactionDate: string; // "YYYY-MM-DD"
+}
+
+// 응답 및 화면용 타입 (id 포함)
+export interface Transaction extends TransactionRequest {
+  id: number;
 }

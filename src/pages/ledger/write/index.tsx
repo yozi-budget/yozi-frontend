@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react'; 
 import Sidebar from '@/components/layout/Sidebar';
 import Header from '@/components/layout/Header';
 import StyledButton from '@/components/common/StyledButton';
@@ -48,6 +48,11 @@ const LedgerWritePage = () => {
   const [rows, setRows] = useState([initialRow]);
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const navigate = useNavigate();
+  
+  // 컴포넌트가 처음 렌더링될 때 rows 초기화
+  useEffect(() => {
+    setRows([initialRow]);
+  }, []);
   
 
   // 카테고리 상태 관리 

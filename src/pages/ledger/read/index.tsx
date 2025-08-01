@@ -1,13 +1,14 @@
-// pages/ledger/read/index.tsx
-
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Sidebar from '@/components/layout/Sidebar';
 import Header from '@/components/layout/Header';
 import StyledButton from '@/components/common/StyledButton';
 import LabelBox from '@/components/common/LabelBox';
 import EditLedgerModal from '@/components/ledger/EditLedgerModal';
 import { useNavigate } from 'react-router-dom';
-
+import { useCategoryStore } from '@/store/categoryStore';
+import { useUserStore } from '@/store/userStore';
+import { fetchTransactions, updateTransaction, deleteTransaction } from '@/api/transactions';
+import { Transaction, TransactionRequest } from '@/types/transaction';
 import {
   PageWrapper,
   TopControls,
@@ -21,107 +22,114 @@ import {
   ActionText,
   Pagination,
 } from './index.styles';
-
-const mockData = [
-  {
-    id: 1,
-    type: '지출',
-    date: '2025.06.29 (일)',
-    category: '식료품/외식',
-    method: '카드',
-    place: '씨유',
-    amount: '11,000',
-    memo: '맥주 4캔'
-  },
-  {
-    id: 2,
-    type: '수입',
-    date: '2025.06.28 (토)',
-    category: '기타',
-    method: '현금',
-    place: '알바비',
-    amount: '770,000',
-    memo: '대타 포함'
-  },
-  {
-    id: 3,
-    type: '수입',
-    date: '2025.09.15 (화)',
-    category: '금융/기타',
-    method: '이체',
-    place: '부모님',
-    amount: '300,000',
-    memo: '용돈'
-  },
-  {
-    id: 4,
-    type: '지출',
-    date: '2025.07.01 (월)',
-    category: '교통/차량',
-    method: '카드',
-    place: '버스',
-    amount: '1,250',
-    memo: ''
-  },
-  {
-    id: 5,
-    type: '지출',
-    date: '2025.08.01 (금)',
-    category: '쇼핑/패션',
-    method: '카드',
-    place: '무신사',
-    amount: '52,000',
-    memo: '반팔티'
-  }
-];
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const LedgerReadPage = () => {
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [isEditModalOpen, setEditModalOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<any | null>(null);
+  const [selectedItem, setSelectedItem] = useState<Transaction | null>(null);
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const toggleSidebar = () => setSidebarOpen(prev => !prev);
+
+  const categories = useCategoryStore(state => state.categories);
+  const nickname = useUserStore(state => state.nickname);
 
   const [typeFilter, setTypeFilter] = useState('전체 내역 보기');
   const [categoryFilter, setCategoryFilter] = useState('카테고리 전체보기');
 
   const navigate = useNavigate();
-  
+
+  const getCategoryName = (categoryId: number) => {
+    const category = categories.find(cat => cat.id === categoryId);
+    return category ? category.displayName : '알 수 없음';
+  };
+
+  useEffect(() => {
+    const loadTransactions = async () => {
+      try {
+        setLoading(true);
+        const data = await fetchTransactions();
+        setTransactions(data);
+      } catch (err) {
+        setError('가계부 내역을 불러오는 중 오류가 발생했습니다.');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadTransactions();
+  }, []);
+
   const handleWriteClick = () => {
     navigate('/ledger/write');
   };
 
-  const handleEditClick = (item: any) => {
+  const handleEditClick = (item: Transaction) => {
     setSelectedItem(item);
     setEditModalOpen(true);
   };
 
-  const handleDeleteClick = (id: number) => {
-    console.log('삭제 요청 id:', id);
+  const handleUpdateTransaction = async (updatedData: TransactionRequest) => {
+    if (!selectedItem) return;
+
+    try {
+      await updateTransaction(selectedItem.id, updatedData);
+      setTransactions(prev =>
+        prev.map(item =>
+          item.id === selectedItem.id
+            ? { ...item, ...updatedData }
+            : item
+        )
+      );
+      toast.success('수정 완료!');
+    } catch (err) {
+      console.error('수정 중 오류 발생:', err);
+      toast.error('수정 실패');
+    } finally {
+      setEditModalOpen(false);
+      setSelectedItem(null);
+    }
+  };
+
+  const handleDeleteClick = async (id: number) => {
+    try {
+      await deleteTransaction(id);
+      setTransactions(prev => prev.filter(item => item.id !== id));
+      toast.success('삭제 완료!');
+    } catch (err) {
+      console.error('삭제 중 오류:', err);
+      toast.error('삭제 실패');
+    }
   };
 
   const isFutureDate = (dateStr: string) => {
     const today = new Date();
-    const [year, month, day] = dateStr.split(' ')[0].split('.').map(Number);
+    const [year, month, day] = dateStr.split('-').map(Number);
     const itemDate = new Date(year, month - 1, day);
     return itemDate > today;
   };
 
   const filteredData = useMemo(() => {
-    return mockData
+    return transactions
       .filter(item => {
-        if (typeFilter === '수입 내역 보기' && item.type !== '수입') return false;
-        if (typeFilter === '지출 내역 보기' && item.type !== '지출') return false;
-        if (categoryFilter !== '카테고리 전체보기' && item.category !== categoryFilter) return false;
+        if (typeFilter === '수입 내역 보기' && item.type !== 'INCOME') return false;
+        if (typeFilter === '지출 내역 보기' && item.type !== 'EXPENSE') return false;
+        if (categoryFilter !== '카테고리 전체보기' && getCategoryName(item.categoryId) !== categoryFilter) return false;
         return true;
       })
       .sort((a, b) => {
-        const toDate = (dateStr: string) => {
-          const [year, month, day] = dateStr.split(' ')[0].split('.').map(Number);
-          return new Date(year, month - 1, day);
-        };
-        return toDate(b.date).getTime() - toDate(a.date).getTime(); // 내림차순 정렬
+        const aDate = new Date(a.transactionDate);
+        const bDate = new Date(b.transactionDate);
+        return bDate.getTime() - aDate.getTime();
       });
-  }, [typeFilter, categoryFilter]);
+  }, [transactions, typeFilter, categoryFilter, categories]);
+
+  if (loading) return <div>내역 불러오는 중...</div>;
+  if (error) return <div>{error}</div>;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
@@ -129,7 +137,7 @@ const LedgerReadPage = () => {
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
         {isSidebarOpen && <Sidebar />}
         <PageWrapper>
-          <LabelBox>박땡땡님의 가계부</LabelBox>
+          <LabelBox>{nickname ? `${nickname}님의 가계부` : '가계부'}</LabelBox>
 
           <TopControls>
             <SelectBox as="select" value={typeFilter} onChange={e => setTypeFilter(e.target.value)}>
@@ -140,15 +148,9 @@ const LedgerReadPage = () => {
 
             <SelectBox as="select" value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}>
               <option>카테고리 전체보기</option>
-              <option>식료품/외식</option>
-              <option>주거/공과금</option>
-              <option>교통/차량</option>
-              <option>쇼핑/패션</option>
-              <option>건강/의료</option>
-              <option>교육/자기계발</option>
-              <option>여가/문화</option>
-              <option>금융/기타</option>
-              <option>기타</option>
+              {categories.map(cat => (
+                <option key={cat.id}>{cat.displayName}</option>
+              ))}
             </SelectBox>
 
             <StyledButton variant="primary" style={{ marginLeft: 'auto' }} onClick={handleWriteClick}>
@@ -171,15 +173,17 @@ const LedgerReadPage = () => {
             </TableHeader>
             <tbody>
               {filteredData.map(row => (
-                <TableRow key={row.id} isFuture={isFutureDate(row.date)}>
+                <TableRow key={row.id} isFuture={isFutureDate(row.transactionDate)}>
                   <TableCell>
-                    <Badge type={row.type as '수입' | '지출'}>{row.type}</Badge>
+                    <Badge type={row.type === 'INCOME' ? '수입' : '지출'}>
+                      {row.type === 'INCOME' ? '수입' : '지출'}
+                    </Badge>
                   </TableCell>
-                  <TableCell>{row.date}</TableCell>
-                  <TableCell>{row.category}</TableCell>
-                  <TableCell>{row.method}</TableCell>
-                  <TableCell>{row.place}</TableCell>
-                  <TableCell>{row.amount}</TableCell>
+                  <TableCell>{row.transactionDate}</TableCell>
+                  <TableCell>{getCategoryName(row.categoryId)}</TableCell>
+                  <TableCell>{row.paymentMethod === 'CASH' ? '현금' : '카드'}</TableCell>
+                  <TableCell>{row.vendor}</TableCell>
+                  <TableCell>{row.amount.toLocaleString()} 원</TableCell>
                   <TableCell>{row.memo}</TableCell>
                   <TableCell>
                     <ActionWrapper>
@@ -204,14 +208,16 @@ const LedgerReadPage = () => {
         {isEditModalOpen && selectedItem && (
           <EditLedgerModal
             item={selectedItem}
-            onClose={() => setEditModalOpen(false)}
-            onSave={(updatedItem) => {
-              console.log('수정된 데이터:', updatedItem);
+            categories={categories}
+            onClose={() => {
               setEditModalOpen(false);
+              setSelectedItem(null);
             }}
+            onSave={handleUpdateTransaction}
           />
         )}
       </div>
+      <ToastContainer position="bottom-center" />
     </div>
   );
 };
