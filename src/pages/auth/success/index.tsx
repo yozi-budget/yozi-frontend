@@ -29,6 +29,8 @@ const AuthSuccessPage = () => {
         })
         .catch((error) => {
           console.error("❌ 초기 데이터 로딩 실패:", error);
+          console.log("🧪 useCategoryStore.getState():", useCategoryStore.getState());
+          console.log("🧪 fetchCategories 타입:", typeof fetchCategories);
           navigate("/");
         });
     } else {
