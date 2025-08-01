@@ -1,5 +1,6 @@
 // api/categories.ts
-import api from "@/api/axios"; // 인터셉터 설정된 axios 인스턴스
+
+import api from "@/api/axios"; 
 import { Category } from "@/types/category";
 
 export const fetchCategories = async (): Promise<Category[]> => {
