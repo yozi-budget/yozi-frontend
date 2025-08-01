@@ -19,14 +19,17 @@ const AuthSuccessPage = () => {
 
       // 토큰 저장 이후 → 닉네임/카테고리 불러오기
       fetchNickname()
-        .then(() => fetchCategories())
+        .then(() => {
+          console.log('✅ fetchNickname 완료, 닉네임:', useUserStore.getState().nickname);
+          return fetchCategories();
+        })
         .then(() => {
           console.log("✅ 초기 데이터 불러오기 완료, /home으로 이동");
           navigate("/home");
         })
         .catch((error) => {
           console.error("❌ 초기 데이터 로딩 실패:", error);
-          navigate("/"); // 실패 시 홈으로
+          navigate("/");
         });
     } else {
       console.log("❌ 토큰 없음, /로 이동");

@@ -9,7 +9,6 @@ import Header from '@/components/layout/Header';
 import { LabelBox } from '@/components/common/LabelBox';
 import { useNavigate } from 'react-router-dom';
 import CalendarModal from '@/components/home/CalendarModal';
-import { getTransactions } from '@/api/transactions';
 import { useUserStore } from '@/store/userStore';
 
 import { getHomeData } from '@/api/home';
@@ -76,6 +75,11 @@ const Home: React.FC = () => {
   };
 
   const closeModal = () => setIsModalOpen(false);
+
+  useEffect(() => {
+    console.log("Home 페이지 닉네임 상태 변경:", nickname);
+  }, [nickname]);
+
 
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
