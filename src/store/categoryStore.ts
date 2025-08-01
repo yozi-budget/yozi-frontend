@@ -1,20 +1,22 @@
 // store/categoryStore.ts
-import { create } from 'zustand';
-import { getCategories, Category } from '@/api/categories';
 
-interface CategoryStore {
+import { create } from 'zustand';
+import { Category } from '@/types/category';
+import { fetchCategories } from '@/api/categories';
+
+interface CategoryState {
   categories: Category[];
-  fetchCategories: () => Promise<void>;
+  loadCategories: () => Promise<void>;
 }
 
-export const useCategoryStore = create<CategoryStore>((set) => ({
+export const useCategoryStore = create<CategoryState>((set) => ({
   categories: [],
-  fetchCategories: async () => {
+  loadCategories: async () => {
     try {
-      const data = await getCategories();
+      const data = await fetchCategories();
       set({ categories: data });
-    } catch (e) {
-      console.error('카테고리 불러오기 실패', e);
+    } catch (error) {
+      console.error('Failed to load categories:', error);
     }
   },
 }));

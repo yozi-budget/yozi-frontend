@@ -1,17 +1,8 @@
 // api/categories.ts
-import api from './axios';
+import api from "@/api/axios"; // 인터셉터 설정된 axios 인스턴스
+import { Category } from "@/types/category";
 
-export interface Category {
-  id: number;
-  displayName: string;
-}
-
-export const getCategories = async (): Promise<Category[]> => {
-  try {
-    const res = await api.get<Category[]>('/api/categories');
-    return res.data;
-  } catch (error) {
-    console.error('카테고리 조회 실패', error);
-    throw error;
-  }
+export const fetchCategories = async (): Promise<Category[]> => {
+  const response = await api.post<Category[]>("/api/categories");
+  return response.data;
 };
