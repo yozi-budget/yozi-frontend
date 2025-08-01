@@ -5,7 +5,10 @@ import StyledButton from '@/components/common/StyledButton';
 import { LabelBox } from '@/components/common/LabelBox';
 import { useNavigate } from 'react-router-dom';
 import { useCategoryStore } from '@/store/categoryStore';
-import { postTransaction } from '@/api/transactions';
+import { useUserStore } from '@/store/userStore';  
+import { postTransactionsBatch } from '@/api/transactions';
+import { TransactionRequest, TransactionType, PaymentMethod } from '@/types/transaction';
+
 
 import {
   PageWrapper, 
@@ -45,9 +48,12 @@ const LedgerWritePage = () => {
   const [rows, setRows] = useState([initialRow]);
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const navigate = useNavigate();
+  
 
-  // ✅ 카테고리 상태 관리 훅 사용 (zustand)
+  // 카테고리 상태 관리 
   const categories = useCategoryStore(state => state.categories);
+  // 닉네임 상태 관리 
+  const nickname = useUserStore(state => state.nickname);
 
   const handleChange = (
     index: number,
@@ -68,34 +74,35 @@ const LedgerWritePage = () => {
   };
 
   const handleSubmit = async () => {
-    try {
-      for (const row of rows) {
-        if (
-          !row.type ||
-          !row.date ||
-          !row.categoryId ||
-          !row.method ||
-          !row.place ||
-          !row.amount
-        ) {
-          alert('모든 필드를 정확히 입력해주세요.');
-          return;
-        }
-
-        const type = row.type === '수입' ? 'INCOME' : 'EXPENSE';
-        const paymentMethod = row.method === '현금' ? 'CASH' : 'CARD';
-
-        await postTransaction({
-          type,
-          categoryId: Number(row.categoryId),
-          paymentMethod,
-          vendor: row.place,
-          amount: Number(row.amount),
-          memo: row.memo || '',
-          transactionDate: row.date,
-        });
+    // 유효성 검사
+    for (const row of rows) {
+      if (
+        !row.type ||
+        !row.date ||
+        !row.categoryId ||
+        !row.method ||
+        !row.place ||
+        !row.amount
+      ) {
+        alert('모든 필드를 정확히 입력해주세요.');
+        return;
       }
+    }
 
+    // 요청 바디 배열 생성
+    const transactionRequests: TransactionRequest[] = rows.map(row => ({
+      userId: 0, // 실제 userId로 교체
+      type: row.type === '수입' ? TransactionType.INCOME : TransactionType.EXPENSE,
+      categoryId: row.categoryId,
+      paymentMethod: row.method === '현금' ? PaymentMethod.CASH : PaymentMethod.CARD,
+      vendor: row.place,
+      amount: Number(row.amount),
+      memo: row.memo || '',
+      transactionDate: row.date,
+    }));
+
+    try {
+      await postTransactionsBatch(transactionRequests);
       alert('가계부 내역이 저장되었습니다.');
       navigate('/ledger/read');
     } catch (error) {
@@ -121,7 +128,9 @@ const LedgerWritePage = () => {
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
         {isSidebarOpen && <Sidebar />}
         <PageWrapper>
-          <LabelBox $variant="outline">박땡땡님의 가계부</LabelBox>
+          <LabelBox $variant="outline">
+            {nickname ? `${nickname}님의 가계부` : '가계부'}
+          </LabelBox>
           <Table>
             <TableHeader>
               <tr>
