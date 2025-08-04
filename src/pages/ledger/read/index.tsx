@@ -43,9 +43,16 @@ const LedgerReadPage = () => {
   const navigate = useNavigate();
 
   const getCategoryName = (categoryId: number) => {
-    const category = categories.find(cat => cat.id === categoryId);
-    return category ? category.displayName : '알 수 없음';
-  };
+  console.log('카테고리 ID:', categoryId);
+  console.log('전체 categories:', categories);
+
+  const category = categories.find(cat => cat.id === categoryId);
+  if (!category) {
+    console.warn(`❗ ID ${categoryId}에 해당하는 카테고리가 없습니다.`);
+  }
+
+  return category ? category.displayName : '알 수 없음';
+};
 
   useEffect(() => {
     const loadTransactions = async () => {
