@@ -76,12 +76,17 @@ const LedgerReadPage = () => {
   const handleUpdateTransaction = async (updatedData: TransactionRequest) => {
     if (!selectedItem) return;
 
+    const correctedData = {
+      ...updatedData,
+      categoryId: Number(updatedData.categoryId), // categoryId를 숫자로 강제 변환
+    };
+
     try {
-      await updateTransaction(selectedItem.id, updatedData);
+      await updateTransaction(selectedItem.id, correctedData);
       setTransactions(prev =>
         prev.map(item =>
           item.id === selectedItem.id
-            ? { ...item, ...updatedData }
+            ? { ...item, ...correctedData }
             : item
         )
       );
@@ -94,6 +99,7 @@ const LedgerReadPage = () => {
       setSelectedItem(null);
     }
   };
+
 
   const handleDeleteClick = async (id: number) => {
     try {

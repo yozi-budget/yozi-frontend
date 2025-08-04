@@ -1,7 +1,12 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from 'react';
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import BudgetModal from "@/components/budget/BudgetModal";
+import { fetchBudgetSummary, getMonthlyBudget, updateMonthlyBudget } from '@/api/budget';
+import { BudgetSummary, CategoryBudget } from '@/types/budget';
+
+import { useCategoryStore } from '@/store/categoryStore';
+import { useUserStore } from '@/store/userStore';
 
 import {
   Container,
@@ -20,44 +25,54 @@ import {
 import { LabelBox } from "@/components/common/LabelBox";
 import StyledButton from "@/components/common/StyledButton";
 
-const categories = [
-  "식료품/외식",
-  "주거/공과금",
-  "교통/차량",
-  "쇼핑/패션",
-  "건강/의료",
-  "교육/자기계발",
-  "여가/문화",
-  "금융/기타",
-];
-
-const initialBudgets: Record<string, number> = {
-  "식료품/외식": 210000,
-  "주거/공과금": 200000,
-  "교통/차량": 100000,
-  "쇼핑/패션": 150000,
-  "건강/의료": 12000,
-  "교육/자기계발": 50000,
-  "여가/문화": 100000,
-  "금융/기타": 30000,
-};
-
-const totalBudget = 600000;
-const spentThisMonth = 400000;
+function getMonthLabels() {
+  const now = new Date();
+  const thisMonth = `${now.getMonth() + 1}월`;
+  const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const lastMonth = `${lastMonthDate.getMonth() + 1}월`;
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const daysLeft = daysInMonth - now.getDate();
+  const isLastDay = daysLeft === 0;
+  return { thisMonth, lastMonth, daysLeft, isLastDay };
+}
 
 export default function BudgetPage() {
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [categoryBudgets, setCategoryBudgets] = useState(initialBudgets);
-
-  const remaining = totalBudget - spentThisMonth;
-  const remainingPercent = Math.round((remaining / totalBudget) * 100);
+  const [summary, setSummary] = useState<BudgetSummary | null>(null);
+  const [categoryBudgets, setCategoryBudgets] = useState<CategoryBudget[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const toggleSidebar = () => setSidebarOpen(prev => !prev);
+  const { thisMonth, lastMonth, daysLeft, isLastDay } = getMonthLabels();
+  const categories = useCategoryStore(state => state.categories);
+  const nickname = useUserStore(state => state.nickname);
 
-  const handleBudgetChange = (category: string, newAmount: number) => {
-    setCategoryBudgets((prev) => ({ ...prev, [category]: newAmount }));
+  const getCategoryName = (categoryId: number) => {
+    const category = categories.find(cat => cat.id === categoryId);
+    return category ? category.displayName : '알 수 없음';
   };
+
+  const loadBudgets = async () => {
+    setLoading(true);
+    try {
+      const [summaryData, categoryBudgetData] = await Promise.all([
+        fetchBudgetSummary(),
+        getMonthlyBudget(),
+      ]);
+      setSummary(summaryData);
+      setCategoryBudgets(categoryBudgetData);
+    } catch (error) {
+      console.error('예산 데이터를 불러오는 데 실패했습니다:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadBudgets();
+  }, []);
+
 
   return (
     <Container>
@@ -66,55 +81,94 @@ export default function BudgetPage() {
         {isSidebarOpen && <Sidebar />}
         <ContentWrapper>
           <TopButtonRow>
-            <LabelBox $variant="outline">박땡땡님의 가계부</LabelBox>
+            <LabelBox>{nickname ? `${nickname}님의 가계부` : '가계부'}</LabelBox>
             <StyledButton variant="primary" onClick={() => setShowModal(true)}>
               예산 설정하기
             </StyledButton>
           </TopButtonRow>
 
           {/* 현재 달 예산 */}
-          <BudgetBox>
-            <BudgetTitle>6월 예산</BudgetTitle>
-            <BudgetAmount>{remaining.toLocaleString()}원 남음</BudgetAmount>
-            <ProgressBarWrapper>
-              <ProgressBackground>
-                <ProgressBar width={(spentThisMonth / totalBudget) * 100} />
-              </ProgressBackground>
-            </ProgressBarWrapper>
-            <BudgetDetail>
-              6월 설정 예산 {totalBudget.toLocaleString()}원 <br />
-              남은 예산 {remaining.toLocaleString()}원
-            </BudgetDetail>
-            <SubText>
-              이번 달 예산이 {remainingPercent}% 남았어요. 남은 3일 동안
-              예산을 초과하지 않도록 힘내봐요!
-            </SubText>
-          </BudgetBox>
+          {summary && (
+            <BudgetBox>
+              <BudgetTitle>{thisMonth} 예산</BudgetTitle>
+              <BudgetAmount>
+                {summary.remaining === 0
+                  ? summary.exceeded > 0
+                    ? `예산 초과 ${summary.exceeded.toLocaleString()}원`
+                    : `예산 모두 사용`
+                  : `${summary.remaining.toLocaleString()}원 남음`}
+              </BudgetAmount>
+              <ProgressBarWrapper>
+                <ProgressBackground>
+                  <ProgressBar
+                    width={(summary.spent / summary.total) * 100}
+                    color={summary.exceeded > 0 ? '#ff6b6b' : '#339af0'}
+                  />
+                </ProgressBackground>
+              </ProgressBarWrapper>
+              <BudgetDetail>
+                설정 예산 {summary.total.toLocaleString()}원 <br />
+                {summary.exceeded > 0
+                  ? `초과 예산 ${summary.exceeded.toLocaleString()}원`
+                  : `남은 예산 ${summary.remaining.toLocaleString()}원`}
+              </BudgetDetail>
+              <SubText>
+                {summary.remaining === 0 && summary.exceeded === 0 && (
+                  isLastDay
+                    ? '이번 달 예산을 딱 맞게 모두 사용했어요! 계획적인 소비 멋져요 👏'
+                    : `이번 달 예산을 모두 사용했어요. 아직 ${daysLeft}일 남았으니, 초과하지 않도록 주의해요 ⚠️`
+                )}
+                {summary.remaining === 0 && summary.exceeded > 0 &&
+                  `이번 달 예산을 ${summary.exceeded.toLocaleString()}원 초과했어요. 다음 달엔 조금만 더 신중하게!`}
+                {summary.remaining > 0 && summary.exceeded === 0 &&
+                  `이번 달 예산이 ${summary.remaining.toLocaleString()}원 남았어요. 남은 ${daysLeft}일 동안 알뜰하게 써봐요!`}
+              </SubText>
+            </BudgetBox>
+          )}
 
           {/* 이전 달 예산 */}
-          <BudgetBox>
-            <BudgetTitle>5월 예산</BudgetTitle>
-            <BudgetAmount>200,000원 절약</BudgetAmount>
-            <ProgressBarWrapper>
-              <ProgressBackground>
-                <ProgressBar width={66} color="#ff6b6b" />
-              </ProgressBackground>
-            </ProgressBarWrapper>
-            <BudgetDetail>
-              5월 설정 예산 600,000원 <br />
-              초과 예산 0원
-            </BudgetDetail>
-            <SubText>
-              지난 달에는 예산에서 33% 덜 사용하셨어요! 절약하는 모습이 멋져요!
-            </SubText>
-          </BudgetBox>
+          {summary && (
+            <BudgetBox>
+              <BudgetTitle>{lastMonth}</BudgetTitle>
+              <BudgetAmount>
+                {summary.prevRemaining === 0
+                  ? summary.prevExceeded > 0
+                    ? `예산 초과 ${summary.prevExceeded.toLocaleString()}원`
+                    : `예산 모두 사용`
+                  : `${summary.prevRemaining.toLocaleString()}원 절약`}
+              </BudgetAmount>
+              <ProgressBarWrapper>
+                <ProgressBackground>
+                  <ProgressBar
+                    width={(summary.prevSpent / summary.prevTotal) * 100}
+                    color={summary.prevExceeded > 0 ? '#ff6b6b' : '#339af0'}
+                  />
+                </ProgressBackground>
+              </ProgressBarWrapper>
+              <BudgetDetail>
+                설정 예산 {summary.prevTotal.toLocaleString()}원 <br />
+                {summary.prevExceeded > 0
+                  ? `초과 예산 ${summary.prevExceeded.toLocaleString()}원`
+                  : `남은 예산 ${summary.prevRemaining.toLocaleString()}원`}
+              </BudgetDetail>
+              <SubText>
+                {summary.prevRemaining === 0 && summary.prevExceeded === 0 &&
+                  '지난 달 예산을 정확하게 사용했어요. 완벽한 소비 계획이었어요!'}
+                {summary.prevRemaining === 0 && summary.prevExceeded > 0 &&
+                  `지난 달 예산을 ${summary.prevExceeded.toLocaleString()}원 초과했어요. 소비를 조금 줄여보는 건 어때요?`}
+                {summary.prevRemaining > 0 && summary.prevExceeded === 0 &&
+                  `지난 달에는 ${summary.prevRemaining.toLocaleString()}원 절약하셨어요! 알뜰한 소비 최고예요 💰`}
+              </SubText>
+            </BudgetBox>
+          )}
 
           <BudgetModal
             isOpen={showModal}
-            onClose={() => setShowModal(false)}
-            categories={categories}
-            categoryBudgets={categoryBudgets}
-            onBudgetChange={handleBudgetChange}
+            onClose={async () => {
+              setShowModal(false);
+              await loadBudgets(); // 모달 닫힐 때 예산 다시 불러오기
+            }}
+            categories={categories}             
           />
         </ContentWrapper>
       </MainLayout>
