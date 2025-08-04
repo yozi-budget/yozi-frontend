@@ -9,41 +9,46 @@ import {
   ModalButton,
 } from '../common/ModalStyles';
 
-export interface LedgerItem {
-  type: '수입' | '지출';
-  date: string;
-  category: string;
-  method: string;
-  place: string;
-  amount: string;
-  memo: string;
+import {
+  Transaction,
+  TransactionRequest,
+  TransactionType,
+  PaymentMethod,
+} from '@/types/transaction';
+
+export interface Category {
+  id: number;
+  displayName: string;
 }
 
 interface EditLedgerModalProps {
-  item: LedgerItem;
+  item: Transaction;
+  categories: Category[];
   onClose: () => void;
-  onSave: (updatedItem: LedgerItem) => void;
+  onSave: (updatedItem: TransactionRequest) => void;
 }
 
-const typeOptions = ['수입', '지출'] as const;
-const categoryOptions = [
-  '식료품/외식',
-  '주거/공과금',
-  '교통/차량',
-  '쇼핑/패션',
-  '건강/의료',
-  '교육/자기계발',
-  '여가/문화',
-  '금융/기타',
-];
-const methodOptions = ['카드', '현금'];
-
-const EditLedgerModal = ({ item, onClose, onSave }: EditLedgerModalProps) => {
-  const [form, setForm] = useState<LedgerItem>({ ...item });
+const EditLedgerModal = ({ item, categories, onClose, onSave }: EditLedgerModalProps) => {
+  const [form, setForm] = useState<TransactionRequest>({
+    type: item.type,
+    transactionDate: item.transactionDate,
+    categoryId: item.categoryId,
+    paymentMethod: item.paymentMethod,
+    vendor: item.vendor,
+    amount: item.amount,
+    memo: item.memo,
+  });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+
+    setForm(prev => ({
+      ...prev,
+      [name]:
+        name === 'amount' || name === 'categoryId'
+          ? Number(value)
+          : value,
+    }));
   };
 
   const handleSubmit = () => {
@@ -51,10 +56,7 @@ const EditLedgerModal = ({ item, onClose, onSave }: EditLedgerModalProps) => {
   };
 
   const formatDateForInput = (dateStr: string) => {
-    if (!dateStr) return '';
-    const datePart = dateStr.split(' ')[0].replace(/\./g, '-');
-    const parts = datePart.split('-').map((p) => p.padStart(2, '0'));
-    return `${parts[0]}-${parts[1]}-${parts[2]}`;
+    return dateStr.split('T')[0]; // ISO 문자열 "2025-08-01T00:00:00" → "2025-08-01"
   };
 
   return (
@@ -64,50 +66,70 @@ const EditLedgerModal = ({ item, onClose, onSave }: EditLedgerModalProps) => {
 
         <label>분류 (수입/지출)</label>
         <ModalSelect name="type" value={form.type} onChange={handleChange}>
-          {typeOptions.map((option) => (
-            <option key={option} value={option}>{option}</option>
-          ))}
+          <option value={TransactionType.INCOME}>수입</option>
+          <option value={TransactionType.EXPENSE}>지출</option>
         </ModalSelect>
 
         <label>날짜</label>
         <ModalInput
           type="date"
-          name="date"
-          value={formatDateForInput(form.date)}
-          onChange={(e) =>
-            setForm((prev) => ({
-              ...prev,
-              date: e.target.value.replace(/-/g, '.') + ' (?)',
-            }))
-          }
+          name="transactionDate"
+          value={formatDateForInput(form.transactionDate)}
+          onChange={handleChange}
         />
 
         <label>카테고리</label>
-        <ModalSelect name="category" value={form.category} onChange={handleChange}>
-          {categoryOptions.map((option) => (
-            <option key={option} value={option}>{option}</option>
+        <ModalSelect
+          name="categoryId"
+          value={form.categoryId}
+          onChange={handleChange}
+        >
+          <option value="">선택</option>
+          {categories.map(cat => (
+            <option key={cat.id} value={cat.id}>
+              {cat.displayName}
+            </option>
           ))}
         </ModalSelect>
 
         <label>결제수단</label>
-        <ModalSelect name="method" value={form.method} onChange={handleChange}>
-          {methodOptions.map((option) => (
-            <option key={option} value={option}>{option}</option>
-          ))}
+        <ModalSelect name="paymentMethod" value={form.paymentMethod} onChange={handleChange}>
+          <option value={PaymentMethod.CARD}>카드</option>
+          <option value={PaymentMethod.CASH}>현금</option>
         </ModalSelect>
 
         <label>거래처</label>
-        <ModalInput name="place" value={form.place} onChange={handleChange} placeholder="거래처 입력" />
+        <ModalInput
+          name="vendor"
+          value={form.vendor}
+          onChange={handleChange}
+          placeholder="거래처 입력"
+        />
 
         <label>금액</label>
-        <ModalInput name="amount" value={form.amount} onChange={handleChange} placeholder="금액 입력" />
+        <ModalInput
+          name="amount"
+          type="number"
+          value={form.amount}
+          onChange={handleChange}
+          placeholder="금액 입력"
+        />
 
         <label>메모</label>
-        <ModalInput name="memo" value={form.memo} onChange={handleChange} placeholder="메모 입력" />
+        <ModalInput
+          name="memo"
+          value={form.memo}
+          onChange={handleChange}
+          placeholder="메모 입력"
+        />
 
         <ModalButtonRow>
-          <ModalButton variant="secondary" onClick={onClose}>취소</ModalButton>
-          <ModalButton variant="primary" onClick={handleSubmit}>저장</ModalButton>
+          <ModalButton variant="secondary" onClick={onClose}>
+            취소
+          </ModalButton>
+          <ModalButton variant="primary" onClick={handleSubmit}>
+            저장
+          </ModalButton>
         </ModalButtonRow>
       </ModalContent>
     </ModalOverlay>
