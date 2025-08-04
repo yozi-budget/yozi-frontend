@@ -40,6 +40,7 @@ export default function BudgetPage() {
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [summary, setSummary] = useState<BudgetSummary | null>(null);
+
   const [categoryBudgets, setCategoryBudgets] = useState<CategoryBudget[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -47,11 +48,6 @@ export default function BudgetPage() {
   const { thisMonth, lastMonth, daysLeft, isLastDay } = getMonthLabels();
   const categories = useCategoryStore(state => state.categories);
   const nickname = useUserStore(state => state.nickname);
-
-  const getCategoryName = (categoryId: number) => {
-    const category = categories.find(cat => cat.id === categoryId);
-    return category ? category.displayName : '알 수 없음';
-  };
 
   const loadBudgets = async () => {
     setLoading(true);
@@ -166,7 +162,7 @@ export default function BudgetPage() {
             isOpen={showModal}
             onClose={async () => {
               setShowModal(false);
-              await loadBudgets(); // 모달 닫힐 때 예산 다시 불러오기
+              await loadBudgets(); 
             }}
             categories={categories}             
           />
