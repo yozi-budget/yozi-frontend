@@ -29,7 +29,6 @@ const CustomTooltip = ({ active, payload }: any) => {
   return null;
 };
 
-
 const CustomLegend = ({ data }: { data: CategoryData[] }) => {
   return (
     <div style={{ display: "flex", flexDirection: "column", marginLeft: "40px" }}>
@@ -44,6 +43,14 @@ const CustomLegend = ({ data }: { data: CategoryData[] }) => {
 };
 
 const CustomCategoryPieChart: React.FC<Props> = ({ data }) => {
+  if (!data || data.length === 0) {
+    return (
+      <div style={{ textAlign: "center", padding: "20px", color: "#999" }}>
+        카테고리별 데이터가 없습니다.
+      </div>
+    );
+  }
+
   // 금액 기준으로 정렬
   const sortedData = [...data].sort((a, b) => b.amount - a.amount);
 

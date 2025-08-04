@@ -1,8 +1,8 @@
-// 월별 분석 타입
 // types/analysis.ts
 
+// 월별 분석 타입
 export interface MonthlyTransaction {
-  date: string; // "2025-08-04"
+  date: string; 
   vendor: string;
   amount: number;
 }
@@ -18,14 +18,13 @@ export interface MonthlyAnalysisResponse {
   habitFeedbackMessages: string[];
 }
 
-
 // 카테고리 분석 타입
-export interface CategorySpendingItem {
+export interface categorySpendingList {
   categoryId: number;
   totalSpentAmount: number;
 }
 
 export interface CategoryAnalysisResult {
-  spendingByCategory: CategorySpendingItem[];
+  spendingByCategory: categorySpendingList[];
   feedbackMessage: string;
 }

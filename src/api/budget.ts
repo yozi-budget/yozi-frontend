@@ -11,7 +11,7 @@ export const fetchBudgetSummary = async (): Promise<BudgetSummary> => {
 
 export const getMonthlyBudget = async (): Promise<CategoryBudget[]> => {
   const response = await api.get('/api/budgets');
-  return response.data; // Array<{ categoryId, amount }>
+  return response.data; 
 };
 
 export const updateMonthlyBudget = async (

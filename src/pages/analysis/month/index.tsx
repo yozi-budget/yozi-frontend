@@ -1,9 +1,12 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from "react";
 import Header from '@/components/layout/Header';
 import Sidebar from '@/components/layout/Sidebar';
 import { LabelBox } from '@/components/common/LabelBox';
 import CustomLineChart from '@/components/chart/CustomLineChart';
 import CustomBarChart from '@/components/chart/CustomBarChart';
+
+import { fetchMonthlyAnalysis } from "@/api/analysis";
+import { MonthlyAnalysisResponse } from "@/types/analysis";
 
 import {
   Container,
