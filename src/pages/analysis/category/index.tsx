@@ -14,21 +14,22 @@ import {
 } from "./index.styles";
 import CustomCategoryPieChart from "@/components/chart/CustomCategoryPieChart";
 import { useCategoryStore } from "@/store/categoryStore";
-
 import { fetchCategoryAnalysis } from "@/api/analysis";
 import { CategoryAnalysisResult } from "@/types/analysis";
 
 export default function CategoryAnalysisPage() {
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const { categories, fetchCategories } = useCategoryStore();
+
   const [categoryData, setCategoryData] = useState<
     { name: string; amount: number; color: string }[]
   >([]);
+  const [feedbackMessage, setFeedbackMessage] = useState<string>(""); // ✅ 추가
   const [loading, setLoading] = useState(true);
 
   const toggleSidebar = () => setSidebarOpen((prev) => !prev);
 
-  // 카테고리 목록 먼저 로드
+  // 카테고리 목록 로드
   useEffect(() => {
     if (categories.length === 0) {
       fetchCategories();
@@ -40,11 +41,21 @@ export default function CategoryAnalysisPage() {
     const loadCategoryData = async () => {
       try {
         const data: CategoryAnalysisResult = await fetchCategoryAnalysis();
-        // spendingByCategory 배열 사용
-        const transformed = data.spendingByCategory.map((item) => {
-          const category = categories.find((cat) => cat.id === item.categoryId);
+        console.log("✅ API 응답:", data);
+
+        // ✅ feedbackMessage 저장
+        setFeedbackMessage(data.feedbackMessage || "");
+
+        // ✅ 데이터 배열 사용
+        const list = data.spendingByCategory || (data as any).categorySpendingList;
+        if (!list) return;
+
+        const transformed = list.map((item) => {
+          const category = categories.find(
+            (cat) => Number(cat.id) === Number(item.categoryId)
+          );
           return {
-            name: category ? category.displayName : "알 수 없음",
+            name: category ? category.displayName : `카테고리(${item.categoryId})`,
             amount: item.totalSpentAmount,
             color: generateColor(item.categoryId),
           };
@@ -62,13 +73,6 @@ export default function CategoryAnalysisPage() {
       loadCategoryData();
     }
   }, [categories]);
-
-  const maxCategory =
-    categoryData.length > 0
-      ? categoryData.reduce((prev, curr) =>
-          curr.amount > prev.amount ? curr : prev
-        )
-      : { name: "", amount: 0, color: "" };
 
   return (
     <Container>
@@ -88,16 +92,11 @@ export default function CategoryAnalysisPage() {
           </ChartCard>
 
           <CenteredTextWrapper>
-            {maxCategory.name ? (
-              <>
-                <SummaryText>
-                  이번 달 가장 많이 소비한 분야는{" "}
-                  <Highlight>[{maxCategory.name}]</Highlight> 입니다.
-                </SummaryText>
-                <Suggestion>
-                  해당 항목에 대해 다음 달 예산 계획을 세워보세요!
-                </Suggestion>
-              </>
+            {loading ? (
+              <SummaryText>데이터 불러오는 중...</SummaryText>
+            ) : feedbackMessage ? (
+              // ✅ API에서 받은 feedbackMessage 사용
+              <SummaryText>{feedbackMessage}</SummaryText>
             ) : (
               <SummaryText>카테고리별 데이터가 없습니다.</SummaryText>
             )}
