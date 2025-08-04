@@ -7,6 +7,7 @@ import CustomBarChart from '@/components/chart/CustomBarChart';
 
 import { fetchMonthlyAnalysis } from "@/api/analysis";
 import { MonthlyAnalysisResponse } from "@/types/analysis";
+import { useCategoryStore } from "@/store/categoryStore";
 
 import {
   Container,
@@ -33,27 +34,86 @@ import {
   LineChartWrapper
 } from './index.styles';
 
+interface BarChartData {
+  month: string;
+  amount: number;
+  days: number;
+  isCurrent: boolean;
+}
+
 const MonthlyAnalysis: React.FC = () => {
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const toggleSidebar = () => setSidebarOpen(prev => !prev);
 
-  // 예시용 더미 데이터
-  const lineChartData = [
-    { date: '1일', amount: 18000 },
-    { date: '5일', amount: 21000 },
-    { date: '10일', amount: 23000 },
-    { date: '15일', amount: 25000 },
-    { date: '20일', amount: 20000 },
-    { date: '25일', amount: 28000 },
-    { date: '30일', amount: 30000 },
-  ];
+  const { categories, fetchCategories } = useCategoryStore();
 
-  const barChartData = [
-    { category: '식비', amount: 300000 },
-    { category: '교통', amount: 120000 },
-    { category: '쇼핑', amount: 100000 },
-    { category: '문화', amount: 80000 },
-  ];
+  const [monthlyData, setMonthlyData] = useState<MonthlyAnalysisResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // ✅ 카테고리 데이터 먼저 로드
+  useEffect(() => {
+    if (categories.length === 0) {
+      fetchCategories();
+    }
+  }, []);
+
+  // ✅ 월별 데이터 로드
+  useEffect(() => {
+    const loadMonthlyData = async () => {
+      try {
+        const data = await fetchMonthlyAnalysis();
+        console.log("✅ 월별 분석 데이터:", data);
+        setMonthlyData(data);
+      } catch (err) {
+        console.error("❌ 월별 분석 데이터 불러오기 실패", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadMonthlyData();
+  }, []);
+
+  // ✅ 꺾은선 차트 데이터
+  const lineChartData =
+    monthlyData?.transactions.map((t) => ({
+      date: `${new Date(t.date).getDate()}일`,
+      amount: t.amount,
+    })) || [];
+
+  // ✅ 막대 차트 데이터 변환 (이번달, 전달, 전전달)
+  const now = new Date();
+  const currentMonth = now.getMonth() + 1;
+  const getMonthLabel = (offset: number) => {
+    let month = currentMonth + offset;
+    if (month <= 0) month += 12;
+    return `${month}월`;
+  };
+
+  const barChartData: BarChartData[] = monthlyData
+    ? [
+        {
+          month: getMonthLabel(-2),
+          amount: monthlyData.twoMonthsAgoTotal,
+          days: 30,
+          isCurrent: false,
+        },
+        {
+          month: getMonthLabel(-1),
+          amount: monthlyData.previousMonthTotal,
+          days: 31,
+          isCurrent: false,
+        },
+        {
+          month: getMonthLabel(0),
+          amount: monthlyData.currentMonthTotal,
+          days: 30,
+          isCurrent: true,
+        },
+      ]
+    : [];
+
+  // ✅ 지출 내역 리스트
+  const transactionList = monthlyData?.transactions || [];
 
   return (
     <Container>
@@ -61,113 +121,100 @@ const MonthlyAnalysis: React.FC = () => {
       <MainLayout>
         {isSidebarOpen && <Sidebar />}
         <ContentWrapper>
-          <TopTitle>2025 6월</TopTitle>
+          <TopTitle>{getMonthLabel(0)}</TopTitle>
           <LabelBox $variant="outline">박땡땡님의 가계부</LabelBox>
 
-          <GridWrapper>
-            <Column>
-              {/* 1. 총 지출 + 꺾은선 */}
-              <Card>
-                <LineChartWrapper>
-                  <ChartTitle>6월 총 지출</ChartTitle>
-                  <Amount type="expense">777,350 원</Amount>
-                  <CustomLineChart data={lineChartData} />
-                </LineChartWrapper>
-              </Card>
+          {loading ? (
+            <p>데이터 불러오는 중...</p>
+          ) : (
+            <GridWrapper>
+              <Column>
+                {/* 1. 총 지출 + 꺾은선 */}
+                <Card>
+                  <LineChartWrapper>
+                    <ChartTitle>{getMonthLabel(0)} 총 지출</ChartTitle>
+                    <Amount type="expense">
+                      {monthlyData?.currentMonthTotal.toLocaleString()} 원
+                    </Amount>
+                    <CustomLineChart data={lineChartData} />
+                  </LineChartWrapper>
+                </Card>
 
-              <div style={{ flexGrow: 1 }} />
+                <div style={{ flexGrow: 1 }} />
 
-              {/* 2. 지출 내역 */}
-              <Card>
-                <FixedExpenseContainer>
-                  <ChartTitle>6월 지출 내역</ChartTitle>
-                  <FixedExpenseList>
-                    <FixedExpenseItem>
-                      <span className="date">15일</span>
-                      <span className="label">보험료</span>
-                      <span className="amount">54,300</span>
-                    </FixedExpenseItem>
-                    <FixedExpenseItem>
-                      <span className="date">25일</span>
-                      <span className="label">통신요금</span>
-                      <span className="amount">49,000</span>
-                    </FixedExpenseItem>
-                    <FixedExpenseItem>
-                      <span className="date">25일</span>
-                      <span className="label">유튜브 프리미엄</span>
-                      <span className="amount">14,900</span>
-                    </FixedExpenseItem>
-                    <FixedExpenseItem>
-                      <span className="date">25일</span>
-                      <span className="label">유튜브 프리미엄</span>
-                      <span className="amount">14,900</span>
-                    </FixedExpenseItem>
-                    <FixedExpenseItem>
-                      <span className="date">25일</span>
-                      <span className="label">유튜브 프리미엄</span>
-                      <span className="amount">14,900</span>
-                    </FixedExpenseItem>
-                    <FixedExpenseItem>
-                      <span className="date">25일</span>
-                      <span className="label">유튜브 프리미엄</span>
-                      <span className="amount">14,900</span>
-                    </FixedExpenseItem>
-                    <FixedExpenseItem>
-                      <span className="date">25일</span>
-                      <span className="label">유튜브 프리미엄</span>
-                      <span className="amount">14,900</span>
-                    </FixedExpenseItem>
-                    <FixedExpenseItem>
-                      <span className="date">25일</span>
-                      <span className="label">유튜브 프리미엄</span>
-                      <span className="amount">14,900</span>
-                    </FixedExpenseItem>
-          
-                  </FixedExpenseList>
+                {/* 2. 지출 내역 */}
+                <Card>
+                  <FixedExpenseContainer>
+                    <ChartTitle>{getMonthLabel(0)} 지출 내역</ChartTitle>
+                    <FixedExpenseList>
+                      {transactionList.map((item, index) => (
+                        <FixedExpenseItem key={index}>
+                          <span className="date">
+                            {new Date(item.date).getDate()}일
+                          </span>
+                          <span className="label">{item.vendor}</span>
+                          <span className="amount">
+                            {item.amount.toLocaleString()}
+                          </span>
+                        </FixedExpenseItem>
+                      ))}
+                    </FixedExpenseList>
 
-                  <FixedExpenseFooter>
-                    <span className="total-label">총</span>
-                    <span className="total-amount">118,200 원</span>
-                  </FixedExpenseFooter>
-                </FixedExpenseContainer>
-              </Card>
+                    <FixedExpenseFooter>
+                      <span className="total-label">총</span>
+                      <span className="total-amount">
+                        {monthlyData?.currentMonthTotal.toLocaleString()} 원
+                      </span>
+                    </FixedExpenseFooter>
+                  </FixedExpenseContainer>
+                </Card>
+              </Column>
 
-            </Column>
+              <RightColumn>
+                {/* 3. 지출 분석 (막대그래프) */}
+                <Card>
+                  <ChartTitle>{getMonthLabel(0)} 지출 분석</ChartTitle>
+                  <p>
+                    이번 달에는 지난 달보다{" "}
+                    <span style={{ color: '#228be6', fontWeight: 600 }}>
+                      {(monthlyData?.currentMonthTotal || 0) -
+                        (monthlyData?.previousMonthTotal || 0)}원
+                    </span>{" "}
+                    더 사용하셨네요!
+                  </p>
+                  <BarChartSection>
+                    <CustomBarChart data={barChartData} />
+                  </BarChartSection>
+                </Card>
 
-            <RightColumn>
-              {/* 3. 지출 분석 (막대그래프) */}
-              <Card>
-                <ChartTitle>6월 지출 분석</ChartTitle>
-                <p>
-                  이번 달에는 지난 달보다{' '}
-                  <span style={{ color: '#228be6', fontWeight: 600 }}>200,000원</span> 더 사용하셨네요!
-                </p>
-                <BarChartSection>
-                  <CustomBarChart/>
-                </BarChartSection>
-              </Card>
+                <Divider />
 
-              <Divider />
-
-              {/* 4. 소비 습관 점수 */}
-              <Card>
-                <ChartTitle>소비 습관 점수 (전월 기준)</ChartTitle>
-                <ScoreBox>
-                  <ScoreInfo>
-                    <ScoreCircle>88 / 100</ScoreCircle>
-                    <ScoreDesc>지난달보다 5점 상승했어요!</ScoreDesc>
-                  </ScoreInfo>
-                  <IconList>
-                    <li>예산 내 소비를 잘 지켰어요!</li>
-                    <li>전월보다 소비가 8% 줄었어요.</li>
-                    <li>모든 항목에서 균형 있게 소비했어요!</li>
-                    <li>22일 동안 소비를 기록했어요.</li>
-                    <li>식비가 전체 소비의 52%를 차지했어요.</li>
-                  </IconList>
-                </ScoreBox>
-              </Card>
-            </RightColumn>
-          </GridWrapper>
+                {/* 4. 소비 습관 점수 */}
+                <Card>
+                  <ChartTitle>소비 습관 점수 (전월 기준)</ChartTitle>
+                  <ScoreBox>
+                    <ScoreInfo>
+                      <ScoreCircle>
+                        {monthlyData?.habitScore ?? 0} / 100
+                      </ScoreCircle>
+                      <ScoreDesc>
+                        {(monthlyData?.habitScoreChange ?? 0) > 0
+                          ? `지난달보다 ${monthlyData?.habitScoreChange ?? 0}점 상승했어요!`
+                          : `지난달보다 ${Math.abs(
+                              monthlyData?.habitScoreChange ?? 0
+                            )}점 하락했어요.`}
+                      </ScoreDesc>
+                    </ScoreInfo>
+                    <IconList>
+                      {monthlyData?.habitFeedbackMessages.map((msg, i) => (
+                        <li key={i}>{msg}</li>
+                      ))}
+                    </IconList>
+                  </ScoreBox>
+                </Card>
+              </RightColumn>
+            </GridWrapper>
+          )}
         </ContentWrapper>
       </MainLayout>
     </Container>
