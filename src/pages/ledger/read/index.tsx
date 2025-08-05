@@ -40,19 +40,15 @@ const LedgerReadPage = () => {
   const [typeFilter, setTypeFilter] = useState('전체 내역 보기');
   const [categoryFilter, setCategoryFilter] = useState('카테고리 전체보기');
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10; // 한 페이지에 보여줄 항목 수
+
   const navigate = useNavigate();
 
   const getCategoryName = (categoryId: number) => {
-  console.log('카테고리 ID:', categoryId);
-  console.log('전체 categories:', categories);
-
-  const category = categories.find(cat => cat.id === categoryId);
-  if (!category) {
-    console.warn(`❗ ID ${categoryId}에 해당하는 카테고리가 없습니다.`);
-  }
-
-  return category ? category.displayName : '알 수 없음';
-};
+    const category = categories.find(cat => cat.id === categoryId);
+    return category ? category.displayName : '알 수 없음';
+  };
 
   useEffect(() => {
     const loadTransactions = async () => {
@@ -107,12 +103,14 @@ const LedgerReadPage = () => {
     }
   };
 
-
   const handleDeleteClick = async (id: number) => {
     try {
       await deleteTransaction(id);
       setTransactions(prev => prev.filter(item => item.id !== id));
       toast.success('삭제 완료!');
+      // 삭제 후 페이지 넘버 조정 (예: 마지막 페이지에 항목 없으면 한 페이지 뒤로)
+      const maxPage = Math.ceil((transactions.length - 1) / itemsPerPage);
+      if (currentPage > maxPage) setCurrentPage(maxPage);
     } catch (err) {
       console.error('삭제 중 오류:', err);
       toast.error('삭제 실패');
@@ -141,6 +139,14 @@ const LedgerReadPage = () => {
       });
   }, [transactions, typeFilter, categoryFilter, categories]);
 
+  // 페이징용 데이터 슬라이스
+  const pagedData = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredData.slice(start, start + itemsPerPage);
+  }, [filteredData, currentPage]);
+
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+
   if (loading) return <div>내역 불러오는 중...</div>;
   if (error) return <div>{error}</div>;
 
@@ -153,13 +159,13 @@ const LedgerReadPage = () => {
           <LabelBox>{nickname ? `${nickname}님의 가계부` : '가계부'}</LabelBox>
 
           <TopControls>
-            <SelectBox as="select" value={typeFilter} onChange={e => setTypeFilter(e.target.value)}>
+            <SelectBox as="select" value={typeFilter} onChange={e => { setTypeFilter(e.target.value); setCurrentPage(1); }}>
               <option>전체 내역 보기</option>
               <option>수입 내역 보기</option>
               <option>지출 내역 보기</option>
             </SelectBox>
 
-            <SelectBox as="select" value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}>
+            <SelectBox as="select" value={categoryFilter} onChange={e => { setCategoryFilter(e.target.value); setCurrentPage(1); }}>
               <option>카테고리 전체보기</option>
               {categories.map(cat => (
                 <option key={cat.id}>{cat.displayName}</option>
@@ -185,7 +191,7 @@ const LedgerReadPage = () => {
               </tr>
             </TableHeader>
             <tbody>
-              {filteredData.map(row => (
+              {pagedData.map(row => (
                 <TableRow key={row.id} isFuture={isFutureDate(row.transactionDate)}>
                   <TableCell>
                     <Badge type={row.type === 'INCOME' ? '수입' : '지출'}>
@@ -210,11 +216,32 @@ const LedgerReadPage = () => {
           </Table>
 
           <Pagination>
-            <span>◀</span>
-            {[1, 2, 3, 4, 5].map(n => (
-              <button key={n} className={n === 1 ? 'active' : ''}>{n}</button>
-            ))}
-            <span>▶</span>
+            <button
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+            >
+              ◀
+            </button>
+
+            {[...Array(totalPages)].map((_, idx) => {
+              const pageNum = idx + 1;
+              return (
+                <button
+                  key={pageNum}
+                  className={pageNum === currentPage ? 'active' : ''}
+                  onClick={() => setCurrentPage(pageNum)}
+                >
+                  {pageNum}
+                </button>
+              );
+            })}
+
+            <button
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+            >
+              ▶
+            </button>
           </Pagination>
         </PageWrapper>
 
