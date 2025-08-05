@@ -7,6 +7,7 @@ import CustomBarChart from '@/components/chart/CustomBarChart';
 
 import { fetchMonthlyAnalysis } from "@/api/analysis";
 import { MonthlyAnalysisResponse } from "@/types/analysis";
+import { useUserStore } from '@/store/userStore';
 import { useCategoryStore } from "@/store/categoryStore";
 
 import {
@@ -46,18 +47,20 @@ const MonthlyAnalysis: React.FC = () => {
   const toggleSidebar = () => setSidebarOpen(prev => !prev);
 
   const { categories, fetchCategories } = useCategoryStore();
+  const nickname = useUserStore(state => state.nickname);
+  
 
   const [monthlyData, setMonthlyData] = useState<MonthlyAnalysisResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // ✅ 카테고리 데이터 먼저 로드
+  // 카테고리 데이터 로드
   useEffect(() => {
     if (categories.length === 0) {
       fetchCategories();
     }
   }, []);
 
-  // ✅ 월별 데이터 로드
+  // 월별 데이터 로드
   useEffect(() => {
     const loadMonthlyData = async () => {
       try {
@@ -73,14 +76,14 @@ const MonthlyAnalysis: React.FC = () => {
     loadMonthlyData();
   }, []);
 
-  // ✅ 꺾은선 차트 데이터
+  // 꺾은선 차트 데이터
   const lineChartData =
     monthlyData?.transactions.map((t) => ({
       date: `${new Date(t.date).getDate()}일`,
       amount: t.amount,
     })) || [];
 
-  // ✅ 막대 차트 데이터 변환 (이번달, 전달, 전전달)
+  // 막대 차트 데이터 변환 (이번달, 전달, 전전달)
   const now = new Date();
   const currentMonth = now.getMonth() + 1;
   const getMonthLabel = (offset: number) => {
@@ -89,30 +92,35 @@ const MonthlyAnalysis: React.FC = () => {
     return `${month}월`;
   };
 
+  // 특정 연도와 월의 일수 계산 함수
+const getDaysInMonth = (year: number, month: number) => {
+  return new Date(year, month, 0).getDate();
+};
+
   const barChartData: BarChartData[] = monthlyData
     ? [
         {
           month: getMonthLabel(-2),
           amount: monthlyData.twoMonthsAgoTotal,
-          days: 30,
+          days: getDaysInMonth(now.getFullYear(), currentMonth - 2 <= 0 ? currentMonth - 2 + 12 : currentMonth - 2),
           isCurrent: false,
         },
         {
           month: getMonthLabel(-1),
           amount: monthlyData.previousMonthTotal,
-          days: 31,
+          days: getDaysInMonth(now.getFullYear(), currentMonth - 1 <= 0 ? currentMonth - 1 + 12 : currentMonth - 1),
           isCurrent: false,
         },
         {
           month: getMonthLabel(0),
           amount: monthlyData.currentMonthTotal,
-          days: 30,
+          days: getDaysInMonth(now.getFullYear(), currentMonth),
           isCurrent: true,
         },
       ]
     : [];
 
-  // ✅ 지출 내역 리스트
+  // 지출 내역 리스트
   const transactionList = monthlyData?.transactions || [];
 
   return (
@@ -122,7 +130,7 @@ const MonthlyAnalysis: React.FC = () => {
         {isSidebarOpen && <Sidebar />}
         <ContentWrapper>
           <TopTitle>{getMonthLabel(0)}</TopTitle>
-          <LabelBox $variant="outline">박땡땡님의 가계부</LabelBox>
+          <LabelBox>{nickname ? `${nickname}님의 가계부` : '가계부'}</LabelBox>
 
           {loading ? (
             <p>데이터 불러오는 중...</p>

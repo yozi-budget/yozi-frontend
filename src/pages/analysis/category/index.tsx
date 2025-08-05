@@ -9,8 +9,6 @@ import {
   ChartCard,
   CenteredTextWrapper,
   SummaryText,
-  Highlight,
-  Suggestion,
 } from "./index.styles";
 import CustomCategoryPieChart from "@/components/chart/CustomCategoryPieChart";
 import { useCategoryStore } from "@/store/categoryStore";
@@ -24,10 +22,14 @@ export default function CategoryAnalysisPage() {
   const [categoryData, setCategoryData] = useState<
     { name: string; amount: number; color: string }[]
   >([]);
-  const [feedbackMessage, setFeedbackMessage] = useState<string>(""); // ✅ 추가
+  const [feedbackMessage, setFeedbackMessage] = useState<string>("");
   const [loading, setLoading] = useState(true);
 
   const toggleSidebar = () => setSidebarOpen((prev) => !prev);
+
+  // 현재 월 표시
+  const now = new Date();
+  const currentMonthLabel = `${now.getFullYear()} ${now.getMonth() + 1}월`;
 
   // 카테고리 목록 로드
   useEffect(() => {
@@ -43,10 +45,10 @@ export default function CategoryAnalysisPage() {
         const data: CategoryAnalysisResult = await fetchCategoryAnalysis();
         console.log("✅ API 응답:", data);
 
-        // ✅ feedbackMessage 저장
+        // feedbackMessage 저장
         setFeedbackMessage(data.feedbackMessage || "");
 
-        // ✅ 데이터 배열 사용
+        // 데이터 배열 사용
         const list = data.spendingByCategory || (data as any).categorySpendingList;
         if (!list) return;
 
@@ -74,13 +76,22 @@ export default function CategoryAnalysisPage() {
     }
   }, [categories]);
 
+  // feedbackMessage 포맷팅 (콤마 → 줄바꿈)
+  const formattedFeedback = feedbackMessage
+    ? feedbackMessage
+        .split(",")
+        .map((msg) => msg.trim())
+        .filter((msg) => msg.length > 0)
+    : [];
+
   return (
     <Container>
       <Header onToggleSidebar={toggleSidebar} />
       <MainLayout>
         {isSidebarOpen && <Sidebar />}
         <ContentWrapper>
-          <PageTitle>2025 6월</PageTitle>
+          {/* 현재 월 자동 반영 */}
+          <PageTitle>{currentMonthLabel}</PageTitle>
 
           <ChartCard>
             <h2>카테고리별 분석</h2>
@@ -94,9 +105,12 @@ export default function CategoryAnalysisPage() {
           <CenteredTextWrapper>
             {loading ? (
               <SummaryText>데이터 불러오는 중...</SummaryText>
-            ) : feedbackMessage ? (
-              // ✅ API에서 받은 feedbackMessage 사용
-              <SummaryText>{feedbackMessage}</SummaryText>
+            ) : formattedFeedback.length > 0 ? (
+              <SummaryText>
+                {formattedFeedback.map((line, index) => (
+                  <div key={index}>{line}</div>
+                ))}
+              </SummaryText>
             ) : (
               <SummaryText>카테고리별 데이터가 없습니다.</SummaryText>
             )}
