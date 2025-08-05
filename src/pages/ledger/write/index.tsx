@@ -44,20 +44,19 @@ const initialRow: Row = {
   memo: ''
 };
 
+// ... 생략 (import 부분 동일)
+
 const LedgerWritePage = () => {
   const [rows, setRows] = useState([initialRow]);
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const navigate = useNavigate();
-  
-  // 컴포넌트가 처음 렌더링될 때 rows 초기화
-  useEffect(() => {
-    setRows([initialRow]);
-  }, []);
-  
 
-  // 카테고리 상태 관리 
+  // 상태 초기화 함수
+  const resetRows = () => setRows([initialRow]);
+
+  // 카테고리 상태 관리
   const categories = useCategoryStore(state => state.categories);
-  // 닉네임 상태 관리 
+  // 닉네임 상태 관리
   const nickname = useUserStore(state => state.nickname);
 
   const handleChange = (
@@ -79,7 +78,6 @@ const LedgerWritePage = () => {
   };
 
   const handleSubmit = async () => {
-    // 유효성 검사
     for (const row of rows) {
       if (
         !row.type ||
@@ -94,9 +92,8 @@ const LedgerWritePage = () => {
       }
     }
 
-    // 요청 바디 배열 생성
     const transactionRequests: TransactionRequest[] = rows.map(row => ({
-      userId: 0, // 실제 userId로 교체
+      userId: 0,
       type: row.type === '수입' ? TransactionType.INCOME : TransactionType.EXPENSE,
       categoryId: row.categoryId,
       paymentMethod: row.method === '현금' ? PaymentMethod.CASH : PaymentMethod.CARD,
@@ -109,7 +106,7 @@ const LedgerWritePage = () => {
     try {
       await postTransactionsBatch(transactionRequests);
       alert('가계부 내역이 저장되었습니다.');
-      setRows([initialRow]); // 상태 초기화 추가
+      resetRows(); // 상태 초기화
       navigate('/ledger/read');
     } catch (error) {
       alert('저장 중 오류가 발생했습니다.');
@@ -147,6 +144,7 @@ const LedgerWritePage = () => {
                 <th>거래처</th>
                 <th>금액</th>
                 <th>메모</th>
+                <th>액션</th>
               </tr>
             </TableHeader>
             <tbody>
@@ -154,10 +152,10 @@ const LedgerWritePage = () => {
                 <TableRow key={idx}>
                   <TableCell>
                     <Select
+                      autoComplete="off"
                       value={row.type}
-                      onChange={(e) =>
-                        handleChange(idx, 'type', e.target.value)
-                      }>
+                      onChange={(e) => handleChange(idx, 'type', e.target.value)}
+                    >
                       <option value="" disabled hidden>선택</option>
                       <option value="지출">지출</option>
                       <option value="수입">수입</option>
@@ -165,19 +163,18 @@ const LedgerWritePage = () => {
                   </TableCell>
                   <TableCell>
                     <Input
+                      autoComplete="off"
                       type="date"
                       value={row.date}
-                      onChange={(e) =>
-                        handleChange(idx, 'date', e.target.value)
-                      }
+                      onChange={(e) => handleChange(idx, 'date', e.target.value)}
                     />
                   </TableCell>
                   <TableCell>
                     <Select
+                      autoComplete="off"
                       value={row.categoryId ? row.categoryId.toString() : ''}
-                      onChange={(e) =>
-                        handleChange(idx, 'categoryId', Number(e.target.value))
-                    }>
+                      onChange={(e) => handleChange(idx, 'categoryId', Number(e.target.value))}
+                    >
                       <option value="" disabled hidden>선택</option>
                       {categories.map(cat => (
                         <option key={cat.id} value={cat.id.toString()}>
@@ -188,10 +185,10 @@ const LedgerWritePage = () => {
                   </TableCell>
                   <TableCell>
                     <Select
+                      autoComplete="off"
                       value={row.method}
-                      onChange={(e) =>
-                        handleChange(idx, 'method', e.target.value)
-                      }>
+                      onChange={(e) => handleChange(idx, 'method', e.target.value)}
+                    >
                       <option value="" disabled hidden>선택</option>
                       <option value="현금">현금</option>
                       <option value="카드">카드</option>
@@ -199,34 +196,31 @@ const LedgerWritePage = () => {
                   </TableCell>
                   <TableCell>
                     <Input
+                      autoComplete="off"
                       value={row.place}
-                      onChange={(e) =>
-                        handleChange(idx, 'place', e.target.value)
-                      }
+                      onChange={(e) => handleChange(idx, 'place', e.target.value)}
                     />
                   </TableCell>
                   <TableCell>
                     <AmountWrapper>
                       <Input
+                        autoComplete="off"
                         type="number"
                         value={row.amount}
-                        onChange={(e) =>
-                          handleChange(idx, 'amount', e.target.value)
-                        }
+                        onChange={(e) => handleChange(idx, 'amount', e.target.value)}
                       />
                       <span>원</span>
                     </AmountWrapper>
                   </TableCell>
                   <TableCell>
                     <MemoInput
+                      autoComplete="off"
                       value={row.memo}
-                      onChange={(e) =>
-                        handleChange(idx, 'memo', e.target.value)
-                      }
+                      onChange={(e) => handleChange(idx, 'memo', e.target.value)}
                     />
                   </TableCell>
                   <TableCell>
-                      <DeleteButton onClick={() => handleDeleteRow(idx)}>삭제</DeleteButton>
+                    <DeleteButton onClick={() => handleDeleteRow(idx)}>삭제</DeleteButton>
                   </TableCell>
                 </TableRow>
               ))}

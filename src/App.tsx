@@ -23,7 +23,7 @@ function App() {
       <Routes>
         <Route path="/" element={<SocialLoginPage />} />
         <Route path="/home" element={<HomePage />} />
-        <Route path="/ledger/write" element={<LedgerWritePage />} />
+        <Route path="/ledger/write" element={<LedgerWritePage key={Date.now()} />} />
         <Route path="/ledger/read" element={<LedgerReadPage />} />
         <Route path="/budget" element={<BudgetPage />} />
         <Route path="/analysis/month" element={<MonthlyAnalysisPage />} />
