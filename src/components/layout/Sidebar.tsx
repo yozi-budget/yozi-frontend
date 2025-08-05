@@ -8,10 +8,26 @@ import {
   BottomSection,
 } from './styles/Sidebar.styles';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { logoutApi } from '@/api/authApi';
 
 const Sidebar: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+
+  const handleLogout = async () => {
+    try {
+      // 1️. 로컬 스토리지 토큰 제거 (키명 통일)
+      localStorage.removeItem("accessToken");
+
+      // 2️. 로그아웃 API 호출
+      await logoutApi();
+    } catch (error) {
+      console.error("로그아웃 처리 중 오류:", error);
+    } finally {
+      // 3️. 로그인 페이지로 리다이렉트
+      window.location.href = "/login";
+    }
+  };
 
   return (
     <SidebarContainer>
@@ -61,7 +77,7 @@ const Sidebar: React.FC = () => {
       </MenuGroup>
 
       <BottomSection>
-        <MenuItem>로그아웃</MenuItem>
+        <MenuItem onClick={handleLogout}>로그아웃</MenuItem>
       </BottomSection>
     </SidebarContainer>
   );
