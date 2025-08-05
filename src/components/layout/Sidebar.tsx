@@ -25,7 +25,7 @@ const Sidebar: React.FC = () => {
       console.error("로그아웃 처리 중 오류:", error);
     } finally {
       // 3️. 로그인 페이지로 리다이렉트
-      window.location.href = "/login";
+      window.location.href = "/";
     }
   };
 
