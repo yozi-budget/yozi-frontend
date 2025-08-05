@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Sidebar from '@/components/layout/Sidebar';
 import Header from '@/components/layout/Header';
 import StyledButton from '@/components/common/StyledButton';
@@ -20,7 +20,6 @@ import {
   ActionWrapper,
   Badge,
   ActionText,
-  Pagination,
 } from './index.styles';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -32,6 +31,12 @@ const LedgerReadPage = () => {
   const [isEditModalOpen, setEditModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<Transaction | null>(null);
   const [isSidebarOpen, setSidebarOpen] = useState(true);
+  const [visibleCount, setVisibleCount] = useState(20);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  const pageRef = useRef<HTMLDivElement | null>(null);
   const toggleSidebar = () => setSidebarOpen(prev => !prev);
 
   const categories = useCategoryStore(state => state.categories);
@@ -39,9 +44,6 @@ const LedgerReadPage = () => {
 
   const [typeFilter, setTypeFilter] = useState('전체 내역 보기');
   const [categoryFilter, setCategoryFilter] = useState('카테고리 전체보기');
-
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10; // 한 페이지에 보여줄 항목 수
 
   const navigate = useNavigate();
 
@@ -81,7 +83,7 @@ const LedgerReadPage = () => {
 
     const correctedData = {
       ...updatedData,
-      categoryId: Number(updatedData.categoryId), // categoryId를 숫자로 강제 변환
+      categoryId: Number(updatedData.categoryId),
     };
 
     try {
@@ -108,9 +110,6 @@ const LedgerReadPage = () => {
       await deleteTransaction(id);
       setTransactions(prev => prev.filter(item => item.id !== id));
       toast.success('삭제 완료!');
-      // 삭제 후 페이지 넘버 조정 (예: 마지막 페이지에 항목 없으면 한 페이지 뒤로)
-      const maxPage = Math.ceil((transactions.length - 1) / itemsPerPage);
-      if (currentPage > maxPage) setCurrentPage(maxPage);
     } catch (err) {
       console.error('삭제 중 오류:', err);
       toast.error('삭제 실패');
@@ -139,13 +138,49 @@ const LedgerReadPage = () => {
       });
   }, [transactions, typeFilter, categoryFilter, categories]);
 
-  // 페이징용 데이터 슬라이스
-  const pagedData = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage;
-    return filteredData.slice(start, start + itemsPerPage);
-  }, [filteredData, currentPage]);
+  // IntersectionObserver로 무한 스크롤 처리
+  useEffect(() => {
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && !isLoadingMore && visibleCount < filteredData.length) {
+        setIsLoadingMore(true);
+        setTimeout(() => {
+          setVisibleCount(prev => Math.min(prev + 20, filteredData.length));
+          setIsLoadingMore(false);
+        }, 500);
+      }
+    }, { threshold: 1.0 });
 
-  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+    if (loadMoreRef.current) {
+      observer.observe(loadMoreRef.current);
+    }
+
+    return () => {
+      if (loadMoreRef.current) {
+        observer.unobserve(loadMoreRef.current);
+      }
+    };
+  }, [filteredData.length, isLoadingMore, visibleCount]);
+
+  // 스크롤 위치 감지 → "위로 가기" 버튼 표시
+  useEffect(() => {
+    const container = pageRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      setShowScrollTop(container.scrollTop > 300);
+    };
+
+    container.addEventListener('scroll', handleScroll);
+    return () => {
+      container.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+
+  const scrollToTop = () => {
+    if (pageRef.current) {
+      pageRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
 
   if (loading) return <div>내역 불러오는 중...</div>;
   if (error) return <div>{error}</div>;
@@ -155,17 +190,17 @@ const LedgerReadPage = () => {
       <Header onToggleSidebar={toggleSidebar} />
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
         {isSidebarOpen && <Sidebar />}
-        <PageWrapper>
+        <PageWrapper ref={pageRef} style={{ overflowY: 'auto', position: 'relative' }}>
           <LabelBox>{nickname ? `${nickname}님의 가계부` : '가계부'}</LabelBox>
 
           <TopControls>
-            <SelectBox as="select" value={typeFilter} onChange={e => { setTypeFilter(e.target.value); setCurrentPage(1); }}>
+            <SelectBox as="select" value={typeFilter} onChange={e => { setTypeFilter(e.target.value); setVisibleCount(20); }}>
               <option>전체 내역 보기</option>
               <option>수입 내역 보기</option>
               <option>지출 내역 보기</option>
             </SelectBox>
 
-            <SelectBox as="select" value={categoryFilter} onChange={e => { setCategoryFilter(e.target.value); setCurrentPage(1); }}>
+            <SelectBox as="select" value={categoryFilter} onChange={e => { setCategoryFilter(e.target.value); setVisibleCount(20); }}>
               <option>카테고리 전체보기</option>
               {categories.map(cat => (
                 <option key={cat.id}>{cat.displayName}</option>
@@ -191,7 +226,7 @@ const LedgerReadPage = () => {
               </tr>
             </TableHeader>
             <tbody>
-              {pagedData.map(row => (
+              {filteredData.slice(0, visibleCount).map(row => (
                 <TableRow key={row.id} isFuture={isFutureDate(row.transactionDate)}>
                   <TableCell>
                     <Badge type={row.type === 'INCOME' ? '수입' : '지출'}>
@@ -215,34 +250,39 @@ const LedgerReadPage = () => {
             </tbody>
           </Table>
 
-          <Pagination>
-            <button
-              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
-            >
-              ◀
-            </button>
+          <div ref={loadMoreRef} style={{ height: '40px' }} />
+          {isLoadingMore && (
+            <div style={{ textAlign: 'center', padding: '10px', color: '#555' }}>
+              🔄 불러오는 중...
+            </div>
+          )}
+          {visibleCount >= filteredData.length && (
+            <div style={{ textAlign: 'center', padding: '10px', color: '#777' }}>
+              ✅ 모든 내역을 불러왔습니다
+            </div>
+          )}
 
-            {[...Array(totalPages)].map((_, idx) => {
-              const pageNum = idx + 1;
-              return (
-                <button
-                  key={pageNum}
-                  className={pageNum === currentPage ? 'active' : ''}
-                  onClick={() => setCurrentPage(pageNum)}
-                >
-                  {pageNum}
-                </button>
-              );
-            })}
-
+          {/* 🔼 위로 가기 버튼 */}
+          {showScrollTop && (
             <button
-              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-              disabled={currentPage === totalPages}
+              onClick={scrollToTop}
+              style={{
+                position: 'fixed',
+                bottom: '20px',
+                right: '20px',
+                backgroundColor: '#007bff',
+                color: '#fff',
+                padding: '10px 15px',
+                borderRadius: '50%',
+                border: 'none',
+                cursor: 'pointer',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+                fontSize: '18px',
+              }}
             >
-              ▶
+              ⬆
             </button>
-          </Pagination>
+          )}
         </PageWrapper>
 
         {isEditModalOpen && selectedItem && (
