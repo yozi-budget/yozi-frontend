@@ -155,8 +155,8 @@ const getDaysInMonth = (year: number, month: number) => {
                   <FixedExpenseContainer>
                     <ChartTitle>{getMonthLabel(0)} 지출 내역</ChartTitle>
                     <FixedExpenseList>
-                      {transactionList.map((item, index) => (
-                        <FixedExpenseItem key={index}>
+                    {transactionList.map((item, index) => (
+                      <FixedExpenseItem key={index}>
                           <span className="date">
                             {new Date(item.date).getDate()}일
                           </span>
@@ -167,7 +167,6 @@ const getDaysInMonth = (year: number, month: number) => {
                         </FixedExpenseItem>
                       ))}
                     </FixedExpenseList>
-
                     <FixedExpenseFooter>
                       <span className="total-label">총</span>
                       <span className="total-amount">

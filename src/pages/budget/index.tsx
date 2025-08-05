@@ -21,6 +21,7 @@ import {
   ProgressBackground,
   SubText,
   BudgetDetail,
+  PercentLabel,   
 } from "./index.styles";
 import { LabelBox } from "@/components/common/LabelBox";
 import StyledButton from "@/components/common/StyledButton";
@@ -63,6 +64,12 @@ export default function BudgetPage() {
     loadBudgets();
   }, []);
 
+  // ✅ 퍼센트 계산 함수 (0으로 나눔 방지)
+  const calcPercent = (spent: number, total: number) => {
+    if (!total || total === 0) return 0;
+    return Math.round((spent / total) * 100);
+  };
+
   return (
     <Container>
       <Header onToggleSidebar={toggleSidebar} />
@@ -91,9 +98,10 @@ export default function BudgetPage() {
                 <ProgressBarWrapper>
                   <ProgressBackground>
                     <ProgressBar
-                      width={(summary.spent / summary.total) * 100}
+                      width={calcPercent(summary.spent, summary.total)}
                       color={summary.exceeded > 0 ? '#ff6b6b' : '#339af0'}
                     />
+                    <PercentLabel>{calcPercent(summary.spent, summary.total)}%</PercentLabel>
                   </ProgressBackground>
                 </ProgressBarWrapper>
                 <BudgetDetail>
@@ -128,9 +136,10 @@ export default function BudgetPage() {
                 <ProgressBarWrapper>
                   <ProgressBackground>
                     <ProgressBar
-                      width={(summary.prevSpent / summary.prevTotal) * 100}
+                      width={calcPercent(summary.prevSpent, summary.prevTotal)}
                       color={summary.prevExceeded > 0 ? '#ff6b6b' : '#339af0'}
                     />
+                    <PercentLabel>{calcPercent(summary.prevSpent, summary.prevTotal)}%</PercentLabel>
                   </ProgressBackground>
                 </ProgressBarWrapper>
                 <BudgetDetail>

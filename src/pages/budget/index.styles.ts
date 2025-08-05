@@ -47,6 +47,7 @@ export const BudgetAmount = styled.div`
 
 export const ProgressBarWrapper = styled.div`
   margin: 1rem 0;
+  position: relative;
 `;
 
 export const ProgressBackground = styled.div`
@@ -54,14 +55,25 @@ export const ProgressBackground = styled.div`
   border-radius: 10px;
   height: 20px;
   width: 100%;
+  overflow: hidden;
 `;
 
 export const ProgressBar = styled.div<{ width: number; color?: string }>`
   height: 100%;
   border-radius: 10px;
   background-color: ${({ color }) => color || '#20c997'};
-  width: ${({ width }) => `${width}%`};
+  width: ${({ width }) => `${Math.min(width, 100)}%`}; /* ✅ 최대 100%로 제한 */
   transition: width 0.4s ease;
+`;
+
+export const PercentLabel = styled.span`
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #495057;
 `;
 
 export const BudgetDetail = styled.div`

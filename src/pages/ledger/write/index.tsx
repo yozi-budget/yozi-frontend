@@ -109,6 +109,7 @@ const LedgerWritePage = () => {
     try {
       await postTransactionsBatch(transactionRequests);
       alert('가계부 내역이 저장되었습니다.');
+      setRows([initialRow]); // 상태 초기화 추가
       navigate('/ledger/read');
     } catch (error) {
       alert('저장 중 오류가 발생했습니다.');
