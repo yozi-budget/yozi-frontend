@@ -258,7 +258,7 @@ const LedgerReadPage = () => {
           )}
           {visibleCount >= filteredData.length && (
             <div style={{ textAlign: 'center', padding: '10px', color: '#777' }}>
-              ✅ 모든 내역을 불러왔습니다
+              모든 내역을 불러왔습니다
             </div>
           )}
 

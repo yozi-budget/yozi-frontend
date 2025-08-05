@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import Header from '@/components/layout/Header';
 import Sidebar from '@/components/layout/Sidebar';
 import { LabelBox } from '@/components/common/LabelBox';
@@ -48,8 +48,6 @@ const MonthlyAnalysis: React.FC = () => {
 
   const { categories, fetchCategories } = useCategoryStore();
   const nickname = useUserStore(state => state.nickname);
-  
-
   const [monthlyData, setMonthlyData] = useState<MonthlyAnalysisResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -93,9 +91,9 @@ const MonthlyAnalysis: React.FC = () => {
   };
 
   // 특정 연도와 월의 일수 계산 함수
-const getDaysInMonth = (year: number, month: number) => {
-  return new Date(year, month, 0).getDate();
-};
+  const getDaysInMonth = (year: number, month: number) => {
+    return new Date(year, month, 0).getDate();
+  };
 
   const barChartData: BarChartData[] = monthlyData
     ? [
@@ -120,8 +118,12 @@ const getDaysInMonth = (year: number, month: number) => {
       ]
     : [];
 
-  // 지출 내역 리스트
-  const transactionList = monthlyData?.transactions || [];
+  // 지출 내역 리스트 (최신순 정렬)
+  const transactionList = useMemo(() => {
+    return (monthlyData?.transactions || [])
+      .slice()
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  }, [monthlyData]);
 
   return (
     <Container>
@@ -155,8 +157,8 @@ const getDaysInMonth = (year: number, month: number) => {
                   <FixedExpenseContainer>
                     <ChartTitle>{getMonthLabel(0)} 지출 내역</ChartTitle>
                     <FixedExpenseList>
-                    {transactionList.map((item, index) => (
-                      <FixedExpenseItem key={index}>
+                      {transactionList.map((item, index) => (
+                        <FixedExpenseItem key={index}>
                           <span className="date">
                             {new Date(item.date).getDate()}일
                           </span>
