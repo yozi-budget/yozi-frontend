@@ -125,12 +125,12 @@ export default function BudgetPage() {
 
               {/* 지난 달 예산 */}
               <BudgetBox>
-                <BudgetTitle>{lastMonth}</BudgetTitle>
+                <BudgetTitle>{lastMonth} 예산</BudgetTitle>
                 <BudgetAmount>
                   {summary.prevRemaining === 0
                     ? summary.prevExceeded > 0
-                      ? `예산 초과 ${summary.prevExceeded.toLocaleString()}원`
-                      : `예산 모두 사용`
+                      ? `초과 ${summary.prevExceeded.toLocaleString()}원`
+                      : `모두 사용`
                     : `${summary.prevRemaining.toLocaleString()}원 절약`}
                 </BudgetAmount>
                 <ProgressBarWrapper>

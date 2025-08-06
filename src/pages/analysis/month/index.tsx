@@ -204,8 +204,10 @@ const MonthlyAnalysis: React.FC = () => {
                   <p>
                     이번 달에는 지난 달보다{" "}
                     <span style={{ color: '#228be6', fontWeight: 600 }}>
-                      {(monthlyData?.currentMonthTotal || 0) -
-                        (monthlyData?.previousMonthTotal || 0)}원
+                      {(
+                        (monthlyData?.currentMonthTotal || 0) -
+                        (monthlyData?.previousMonthTotal || 0)
+                      ).toLocaleString()}원
                     </span>{" "}
                     더 사용하셨네요!
                   </p>
