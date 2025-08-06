@@ -75,11 +75,21 @@ const MonthlyAnalysis: React.FC = () => {
   }, []);
 
   // 꺾은선 차트 데이터
-  const lineChartData =
-    monthlyData?.transactions.map((t) => ({
-      date: `${new Date(t.date).getDate()}일`,
-      amount: t.amount,
-    })) || [];
+  const lineChartData = useMemo(() => {
+    if (!monthlyData?.transactions) return [];
+
+    const aggregated: Record<string, number> = {};
+
+    monthlyData.transactions.forEach((t) => {
+      const dateKey = `${new Date(t.date).getDate()}일`;
+      aggregated[dateKey] = (aggregated[dateKey] || 0) + t.amount;
+    });
+
+    return Object.entries(aggregated).map(([date, amount]) => ({
+      date,
+      amount,
+    }));
+  }, [monthlyData]);
 
   // 막대 차트 데이터 변환 (이번달, 전달, 전전달)
   const now = new Date();

@@ -88,13 +88,11 @@ const LedgerReadPage = () => {
 
     try {
       await updateTransaction(selectedItem.id, correctedData);
-      setTransactions(prev =>
-        prev.map(item =>
-          item.id === selectedItem.id
-            ? { ...item, ...correctedData }
-            : item
-        )
-      );
+
+      // 수정 후 최신 데이터 다시 불러오기
+      const data = await fetchTransactions();
+      setTransactions(data);
+
       toast.success('수정 완료!');
     } catch (err) {
       console.error('수정 중 오류 발생:', err);
@@ -104,6 +102,7 @@ const LedgerReadPage = () => {
       setSelectedItem(null);
     }
   };
+
 
   const handleDeleteClick = async (id: number) => {
     try {
